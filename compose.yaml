@@ -38,6 +38,40 @@ services:
       timeout: 3s
       retries: 10
 
+  prometheus:
+    image: prom/prometheus:v3.11.2
+    container_name: flowit-local-prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - flowit_local_prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:12.3.6-security-04-ubuntu
+    container_name: flowit-local-grafana
+    ports:
+      - "127.0.0.1:3050:3050"
+    environment:
+      GF_SERVER_HTTP_PORT: 3050
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: flowitLocalAdmin
+    volumes:
+      - flowit_local_grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
 volumes:
   flowit_local_mysql_data:
   flowit_local_redis_data:
+  flowit_local_prometheus_data:
+  flowit_local_grafana_data:

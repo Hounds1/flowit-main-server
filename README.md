@@ -26,6 +26,8 @@
 | Category | Technology |
 |---|---|
 | Health Check / Metrics | Spring Boot Actuator |
+| Metrics Collection | Prometheus |
+| Metrics Visualization | Grafana |
 | Error Monitoring | Sentry |
 
 ### Documentation
@@ -43,7 +45,7 @@
 
 
 
-## Local Database / Redis Initialization
+## Local Infrastructure Initialization
 
 ### ! 필수 : Docker Desktop을 반드시 실행하십시오. <br>! Required: Docker Desktop must be running.
 
@@ -53,6 +55,17 @@ From the project root, run:
 ```bash
 docker compose up -d
 ```
+
+Spring Boot 애플리케이션은 `compose.yaml`에 포함되어 있지 않으므로 별도로 실행하십시오.<br>
+The Spring Boot application is not included in `compose.yaml`, so run it separately.
+
+```bash
+./gradlew bootRun
+```
+
+### Local Development Application Information
+- Host: localhost
+- Port: 8080
 
 ### Local Development Database Information
 - Host: localhost
@@ -66,24 +79,49 @@ docker compose up -d
 - Port: 6379
 - Password: flowitLocalDev
 
+### Local Development Actuator Information
+- Host: localhost
+- Port: 8081
+- Binding: 127.0.0.1
+- Exposed endpoints: health, prometheus
+
+### Local Development Prometheus Information
+- Host: localhost
+- Port: 9090
+- Binding: 127.0.0.1
+- Scrape target: host.docker.internal:8081/actuator/prometheus
+
+### Local Development Grafana Information
+- Host: localhost
+- Port: 3050
+- Binding: 127.0.0.1
+- Username: admin
+- Password: flowitLocalAdmin
+
 Redis 컨테이너는 로컬 개발 환경에서 캐시 및 메시징 기능을 사용하기 위해 함께 생성됩니다.<br>
 The Redis container is created together for local cache and messaging features.
 
-MySQL과 Redis는 모두 `127.0.0.1`에만 바인딩되므로 로컬에서만 접근할 수 있습니다.<br>
-Both MySQL and Redis are bound only to `127.0.0.1`, so they are accessible only from the local.
+Prometheus 컨테이너는 Spring Boot Actuator metrics를 수집하고, Grafana 컨테이너는 Prometheus datasource가 자동 등록된 상태로 생성됩니다.<br>
+The Prometheus container collects Spring Boot Actuator metrics, and the Grafana container is created with the Prometheus datasource provisioned.
+
+MySQL, Redis, Prometheus, Grafana는 모두 `127.0.0.1`에만 바인딩되므로 로컬에서만 접근할 수 있습니다.<br>
+MySQL, Redis, Prometheus, and Grafana are bound only to `127.0.0.1`, so they are accessible only from the local.
+
+Spring Boot Actuator 역시 `127.0.0.1`에 바인딩되므로 로컬 Prometheus에서만 metrics를 수집할 수 있습니다.<br>
+Spring Boot Actuator is also bound to `127.0.0.1`, so metrics can be collected only by the local Prometheus.
 
 ### Recreate container
 
-초기화 SQL을 다시 실행하거나 로컬 데이터베이스 및 Redis 데이터를 초기 상태로 되돌려야 할 때 사용하십시오.<br>
-Use this when you need to re-run the initialization SQL or reset the local database and Redis data.
+초기화 SQL을 다시 실행하거나 로컬 데이터베이스, Redis, Prometheus, Grafana 데이터를 초기 상태로 되돌려야 할 때 사용하십시오.<br>
+Use this when you need to re-run the initialization SQL or reset the local database, Redis, Prometheus, and Grafana data.
 
 ```bash
 docker compose down -v
 docker compose up -d
 ```
 
-`-v` 옵션은 MySQL 및 Redis 데이터 볼륨을 삭제하므로 기존 로컬 데이터가 모두 제거됩니다.<br>
-The `-v` option removes the MySQL and Redis data volumes, so all existing local data will be deleted.
+`-v` 옵션은 MySQL, Redis, Prometheus, Grafana 데이터 볼륨을 삭제하므로 기존 로컬 데이터가 모두 제거됩니다.<br>
+The `-v` option removes the MySQL, Redis, Prometheus, and Grafana data volumes, so all existing local data will be deleted.
 
 ### Stop container
 
