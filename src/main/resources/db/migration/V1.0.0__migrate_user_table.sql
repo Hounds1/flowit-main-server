@@ -1,3 +1,23 @@
+CREATE TABLE files (
+                       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '파일 식별자.',
+                       storage_key VARCHAR(500) NOT NULL COMMENT 'Object storage 내부 파일 key 또는 경로.',
+                       original_filename VARCHAR(255) NULL COMMENT '업로드 당시 원본 파일명.',
+                       content_type VARCHAR(100) NOT NULL COMMENT '파일 MIME type.',
+                       size_bytes BIGINT UNSIGNED NOT NULL COMMENT '파일 크기. bytes 기준.',
+                       width INT UNSIGNED NULL COMMENT '이미지 너비. 이미지 파일이 아닌 경우 NULL.',
+                       height INT UNSIGNED NULL COMMENT '이미지 높이. 이미지 파일이 아닌 경우 NULL.',
+                       created_at BIGINT UNSIGNED NOT NULL COMMENT '파일 메타데이터 생성 일시. Unix epoch milliseconds 기준.',
+                       updated_at BIGINT UNSIGNED NOT NULL COMMENT '파일 메타데이터 최종 수정 일시. Unix epoch milliseconds 기준.',
+                       deleted_at BIGINT UNSIGNED NULL COMMENT '파일 소프트 삭제 일시. Unix epoch milliseconds 기준.',
+
+                       PRIMARY KEY (id),
+                       UNIQUE KEY uk_files_storage_key (storage_key),
+                       KEY idx_files_deleted_at (deleted_at)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='업로드 파일 메타데이터 테이블.';
+
 CREATE TABLE users (
                        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '회원 식별자. UUID 대신 MySQL AUTO_INCREMENT 기반 시퀀스 ID를 사용',
                        email VARCHAR(255) NOT NULL COMMENT '이메일 계정. 로그인 식별자로 사용되며 활성 계정 기준으로 유일',
@@ -33,23 +53,3 @@ CREATE TABLE users (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
   COMMENT='서비스 사용자 계정 테이블. 로그인, 프로필, 계정 상태를 관리.';
-
-CREATE TABLE files (
-                       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '파일 식별자.',
-                       storage_key VARCHAR(500) NOT NULL COMMENT 'Object storage 내부 파일 key 또는 경로.',
-                       original_filename VARCHAR(255) NULL COMMENT '업로드 당시 원본 파일명.',
-                       content_type VARCHAR(100) NOT NULL COMMENT '파일 MIME type.',
-                       size_bytes BIGINT UNSIGNED NOT NULL COMMENT '파일 크기. bytes 기준.',
-                       width INT UNSIGNED NULL COMMENT '이미지 너비. 이미지 파일이 아닌 경우 NULL.',
-                       height INT UNSIGNED NULL COMMENT '이미지 높이. 이미지 파일이 아닌 경우 NULL.',
-                       created_at BIGINT UNSIGNED NOT NULL COMMENT '파일 메타데이터 생성 일시. Unix epoch milliseconds 기준.',
-                       updated_at BIGINT UNSIGNED NOT NULL COMMENT '파일 메타데이터 최종 수정 일시. Unix epoch milliseconds 기준.',
-                       deleted_at BIGINT UNSIGNED NULL COMMENT '파일 소프트 삭제 일시. Unix epoch milliseconds 기준.',
-
-                       PRIMARY KEY (id),
-                       UNIQUE KEY uk_files_storage_key (storage_key),
-                       KEY idx_files_deleted_at (deleted_at)
-) ENGINE=InnoDB
-  DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_unicode_ci
-  COMMENT='업로드 파일 메타데이터 테이블.';

@@ -14,7 +14,10 @@ public class SecurityConfig {
 
 	private static final String[] PUBLIC_ENDPOINTS = {
 		"/actuator/health",
-		"/actuator/prometheus"
+		"/actuator/prometheus",
+		"/api/docs-preview/**",
+		"/docs",
+		"/docs/**"
 	};
 
 	@Bean

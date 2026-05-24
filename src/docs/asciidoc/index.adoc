@@ -1,0 +1,35 @@
+= Flowit API 문서
+:doctype: book
+:toc: left
+:toc-title: 목차
+:toclevels: 2
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+
+== API 문서 목차
+
+Flowit API 문서의 진입점입니다. API가 추가되면 이 페이지에서 도메인별 문서로 이동할 수 있습니다.
+
+[cols="18,24,26,32",role="api-index"]
+|===
+|분류 |문서 |대표 API |설명
+
+|문서 미리보기
+|link:docs-preview.html[문서 미리보기 API]
+|`POST /api/docs-preview/projects/{projectId}/tasks`
+|커스텀 Spring REST Docs 스니펫의 요청, 응답, 필드 문서 예시를 확인합니다.
+|===
+
+== 문서 구성 기준
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|문서 홈 |`/docs`, `/docs/index.html`
+|상세 문서 |API 도메인 또는 기능 단위로 별도 HTML 페이지를 생성합니다.
+|추가 방식 |새 Asciidoc 파일을 만들고 이 목차에 링크를 추가합니다.
+|===

@@ -1,0 +1,62 @@
+= 문서 미리보기 API
+:doctype: book
+:toc: left
+:toc-title: 목차
+:toclevels: 3
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+
+[.page-action]
+link:index.html[API 문서 목차로 이동]
+
+== 작업 생성 문서 미리보기
+
+이 문서는 커스텀 Spring REST Docs 스니펫 디자인을 확인하기 위한 예시 문서입니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |`POST`
+|경로 |`/api/docs-preview/projects/{projectId}/tasks`
+|목적 |샘플 작업을 생성하고 문서 테마에서 사용하는 핵심 스니펫을 보여줍니다.
+|===
+
+=== HTTP 요청
+
+include::{snippets}/docs-preview-create-task/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/docs-preview-create-task/curl-request.adoc[]
+
+=== 경로 변수
+
+include::{snippets}/docs-preview-create-task/path-parameters.adoc[]
+
+=== 쿼리 파라미터
+
+include::{snippets}/docs-preview-create-task/query-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/docs-preview-create-task/request-headers.adoc[]
+
+=== 요청 필드
+
+include::{snippets}/docs-preview-create-task/request-fields.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/docs-preview-create-task/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/docs-preview-create-task/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/docs-preview-create-task/response-fields.adoc[]
