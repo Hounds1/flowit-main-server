@@ -1,0 +1,11 @@
+[cols="2,1,5",options="header",role="api-table headers-table"]
+|===
+|헤더 |필수 여부 |설명
+
+{{#headers}}
+|{{#tableCellContent}}[.field-path]#`+{{name}}+`#{{/tableCellContent}}
+|{{#tableCellContent}}{{#optional}}[.badge.optional]#선택#{{/optional}}{{^optional}}[.badge.required]#필수#{{/optional}}{{/tableCellContent}}
+|{{#tableCellContent}}{{description}}{{/tableCellContent}}
+
+{{/headers}}
+|===
