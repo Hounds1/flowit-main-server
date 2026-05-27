@@ -94,6 +94,70 @@ a {
   letter-spacing: 0;
 }
 
+#content details {
+  margin: 16px 0 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(16, 24, 40, 0.05);
+}
+
+#content details[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+#content details summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  list-style: none;
+  padding: 15px 18px;
+  background: var(--surface-soft);
+  color: #1d2939;
+  font-size: 16px;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+#content details summary::-webkit-details-marker {
+  display: none;
+}
+
+#content details summary::marker {
+  content: "";
+}
+
+#content details summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+#content details[open] summary::after {
+  transform: rotate(225deg);
+}
+
+#content details summary:focus-visible {
+  outline: 3px solid var(--accent-soft);
+  outline-offset: -3px;
+}
+
+#content details .content {
+  padding: 16px 18px 18px;
+}
+
+#content details table {
+  margin: 0;
+  box-shadow: none;
+}
+
 p {
   margin: 0 0 18px;
   color: #344054;
@@ -176,7 +240,8 @@ table {
 
 table.api-table,
 table.endpoint-summary,
-table.api-index {
+table.api-index,
+table.error-code-table {
   table-layout: fixed;
 }
 
@@ -220,10 +285,10 @@ table.api-index td {
 }
 
 table.api-index td:first-child {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 720;
-  text-transform: uppercase;
+  color: #1d2939;
+  font-size: 14px;
+  font-weight: 650;
+  text-transform: none;
 }
 
 table.api-index td {
@@ -234,6 +299,28 @@ table.api-index td code {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+table.error-code-table td {
+  color: #344054;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+table.error-code-table td code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+table.error-code-table td:nth-child(3) p {
+  margin: 0;
+}
+
+table.error-code-table td:nth-child(3) p + p {
+  margin-top: 10px;
 }
 
 table.endpoint-summary td:first-child {

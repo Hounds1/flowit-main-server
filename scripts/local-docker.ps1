@@ -13,6 +13,8 @@ $SourceHashLabel = 'dev.runtime-lab.flowit.source-hash'
 $SourceHashPaths = @(
     'src/main',
     'src/docs',
+    'src/test/java/dev/runtime_lab/flowit/docs',
+    'src/test/resources/org/springframework/restdocs',
     'build.gradle',
     'settings.gradle',
     'gradle',
@@ -89,6 +91,42 @@ function Invoke-QuietNative {
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+
+function Invoke-QuietNativeWithTimeout {
+    param(
+        [string[]] $CommandLine,
+        [int] $TimeoutSeconds = 5
+    )
+
+    $job = Start-Job -ScriptBlock {
+        param([string[]] $InnerCommandLine)
+
+        $executable = $InnerCommandLine[0]
+        $arguments = @()
+        if ($InnerCommandLine.Length -gt 1) {
+            $arguments = $InnerCommandLine[1..($InnerCommandLine.Length - 1)]
+        }
+
+        & $executable @arguments *> $null
+        $LASTEXITCODE
+    } -ArgumentList (, $CommandLine)
+
+    try {
+        if (Wait-Job -Job $job -Timeout $TimeoutSeconds) {
+            $exitCode = Receive-Job -Job $job
+            if ($null -eq $exitCode) {
+                return 0
+            }
+            return [int] $exitCode
+        }
+
+        Stop-Job -Job $job
+        return 124
+    }
+    finally {
+        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -257,7 +295,11 @@ function Assert-LocalDockerAllowed {
 
 function Require-Docker {
     if (-not (Test-Command 'docker')) {
-        throw "ERROR: Docker is required for '$InvocationLabel'. Start Docker Desktop and make the 'docker' command available."
+        throw "ERROR: Docker is required for '$InvocationLabel'. Install and start Docker Desktop, then make the 'docker' command available."
+    }
+
+    if ((Invoke-QuietNativeWithTimeout -CommandLine @('docker', 'info') -TimeoutSeconds 5) -ne 0) {
+        throw "ERROR: Docker Desktop is not running or the Docker Engine is not ready. Start Docker Desktop or start the Docker Engine, wait until it is running, then run '$InvocationLabel' again."
     }
 
     if ((Invoke-QuietNative -CommandLine @('docker', 'compose', 'version')) -ne 0) {
@@ -374,53 +416,59 @@ if ($Command -in @('help', '-h', '--help', '/?')) {
     exit 0
 }
 
-$supportedCommands = @('start', 'build-image', 'infra-start', 'infra-stop', 'stop', 'status', 'logs')
-if ($Command -notin $supportedCommands) {
-    Write-Usage
-    throw "ERROR: unsupported local Docker command: $Command"
-}
+try {
+    $supportedCommands = @('start', 'build-image', 'infra-start', 'infra-stop', 'stop', 'status', 'logs')
+    if ($Command -notin $supportedCommands) {
+        Write-Usage
+        throw "ERROR: unsupported local Docker command: $Command"
+    }
 
-Assert-LocalDockerAllowed
-Require-Docker
-if (-not [string]::IsNullOrWhiteSpace($GradleFallbackTask)) {
-    Write-Info "Local Java is unavailable; running '.\gradlew.bat $GradleFallbackTask' through Docker commands."
-}
+    Assert-LocalDockerAllowed
+    Require-Docker
+    if (-not [string]::IsNullOrWhiteSpace($GradleFallbackTask)) {
+        Write-Info "Local Java is unavailable; running '.\gradlew.bat $GradleFallbackTask' through Docker commands."
+    }
 
-switch ($Command) {
-    'start' {
-        Start-Local
-    }
-    'build-image' {
-        $sourceHash = Get-SourceHash
-        Write-Info "Building Docker image: $LocalAppImage"
-        Invoke-DockerBuild -SourceHash $sourceHash
-    }
-    'infra-start' {
-        $composeArgs = @('up', '-d', '--wait') + $LocalInfrastructureServices
-        $exitCode = Invoke-Native -CommandLine (@('docker') + (Get-DockerComposeBaseArgs) + $composeArgs)
-        if ($exitCode -ne 0) {
-            Write-Info 'Docker Compose did not accept or complete --wait. Falling back to: docker compose up -d'
-            Invoke-DockerCompose -ComposeArgs (@('up', '-d') + $LocalInfrastructureServices)
+    switch ($Command) {
+        'start' {
+            Start-Local
+        }
+        'build-image' {
+            $sourceHash = Get-SourceHash
+            Write-Info "Building Docker image: $LocalAppImage"
+            Invoke-DockerBuild -SourceHash $sourceHash
+        }
+        'infra-start' {
+            $composeArgs = @('up', '-d', '--wait') + $LocalInfrastructureServices
+            $exitCode = Invoke-Native -CommandLine (@('docker') + (Get-DockerComposeBaseArgs) + $composeArgs)
+            if ($exitCode -ne 0) {
+                Write-Info 'Docker Compose did not accept or complete --wait. Falling back to: docker compose up -d'
+                Invoke-DockerCompose -ComposeArgs (@('up', '-d') + $LocalInfrastructureServices)
+            }
+        }
+        'infra-stop' {
+            Invoke-DockerCompose -ComposeArgs (@('stop') + $LocalInfrastructureServices)
+        }
+        'stop' {
+            Invoke-DockerCompose -ComposeArgs @('down')
+        }
+        'status' {
+            if (Test-AppHealth) {
+                Write-Info 'Application health: HTTP 200'
+            }
+            else {
+                Write-Info 'Application health: unavailable'
+            }
+            Write-Info ''
+            Write-Info 'Docker Compose services:'
+            Invoke-DockerCompose -ComposeArgs @('ps')
+        }
+        'logs' {
+            Invoke-DockerCompose -ComposeArgs @('logs', '-f', 'app')
         }
     }
-    'infra-stop' {
-        Invoke-DockerCompose -ComposeArgs (@('stop') + $LocalInfrastructureServices)
-    }
-    'stop' {
-        Invoke-DockerCompose -ComposeArgs @('down')
-    }
-    'status' {
-        if (Test-AppHealth) {
-            Write-Info 'Application health: HTTP 200'
-        }
-        else {
-            Write-Info 'Application health: unavailable'
-        }
-        Write-Info ''
-        Write-Info 'Docker Compose services:'
-        Invoke-DockerCompose -ComposeArgs @('ps')
-    }
-    'logs' {
-        Invoke-DockerCompose -ComposeArgs @('logs', '-f', 'app')
-    }
+}
+catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
 }

@@ -185,8 +185,8 @@ The build command uses `--progress=plain`, so Dockerfile steps, Gradle downloads
 Docker Desktop에서 컨테이너 uptime이 유지되고 있다면 애플리케이션 컨테이너는 계속 실행 중인 상태입니다. 이때 터미널 명령은 이미지 빌드, Compose 상태 확인, health 확인 단계에 있을 수 있습니다.<br>
 If the container uptime continues in Docker Desktop, the application container is still running. In that case, the terminal command can be spending time on image build, Compose status checks, or health checks.
 
-로컬 시작 명령은 `src/main`, `src/docs`, Gradle 설정, Docker 설정의 소스 해시가 기존 `flowit-main-server:local` 이미지와 같으면 이미지를 재사용하고, 달라지면 자동으로 다시 빌드합니다. 강제로 다시 빌드해야 할 때는 `local.bat build-image`, `./local.sh build-image`, 또는 `./gradlew localBuildImage`를 실행하십시오.<br>
-Local start commands reuse the existing `flowit-main-server:local` image when the source hash for `src/main`, `src/docs`, Gradle settings, and Docker settings matches the image, and rebuild it automatically when the hash changes. Run `local.bat build-image`, `./local.sh build-image`, or `./gradlew localBuildImage` when you need to force a rebuild.
+로컬 시작 명령은 `src/main`, `src/docs`, REST Docs 테스트, REST Docs 템플릿, Gradle 설정, Docker 설정의 소스 해시가 기존 `flowit-main-server:local` 이미지와 같으면 이미지를 재사용하고, 달라지면 자동으로 다시 빌드합니다. 강제로 다시 빌드해야 할 때는 `local.bat build-image`, `./local.sh build-image`, 또는 `./gradlew localBuildImage`를 실행하십시오.<br>
+Local start commands reuse the existing `flowit-main-server:local` image when the source hash for `src/main`, `src/docs`, REST Docs tests, REST Docs templates, Gradle settings, and Docker settings matches the image, and rebuild it automatically when the hash changes. Run `local.bat build-image`, `./local.sh build-image`, or `./gradlew localBuildImage` when you need to force a rebuild.
 
 Windows에서는 JDK 없이 실행할 때 `local.bat`를 사용하면 Gradle Wrapper 기동을 건너뛰고 PowerShell 기반 Docker 명령만 실행합니다. Mac에서는 `./local.sh start`를 사용하십시오.<br>
 On Windows, `local.bat` skips Gradle Wrapper startup and runs PowerShell-based Docker commands when running without a JDK. On Mac, use `./local.sh start`.

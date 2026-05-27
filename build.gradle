@@ -1,4 +1,6 @@
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.DocsType
@@ -25,12 +27,25 @@ repositories {
 
 ext {
 	set('snippetsDir', file("build/generated-snippets"))
+	set('querydslVersion', '5.1.0')
 }
 
 def apiDocsStaticDir = layout.buildDirectory.dir('resources/main/static/docs')
 def composeFile = layout.projectDirectory.file('compose.yaml')
 def composeLinuxFile = layout.projectDirectory.file('compose.linux.yaml')
 def localAppImage = 'flowit-main-server:local'
+def localAppImageSourceHashLabel = 'dev.runtime-lab.flowit.source-hash'
+def localSourceHashPaths = [
+	'src/main',
+	'src/docs',
+	'src/test/java/dev/runtime_lab/flowit/docs',
+	'src/test/resources/org/springframework/restdocs',
+	'build.gradle',
+	'settings.gradle',
+	'gradle',
+	'Dockerfile',
+	'.dockerignore'
+]
 def localInfrastructureServices = ['mysql', 'redis', 'prometheus', 'grafana']
 def localStackServices = ['app'] + localInfrastructureServices
 def localAppHealthUrl = 'http://127.0.0.1:8081/actuator/health'
@@ -97,11 +112,47 @@ def dockerComposeCommand = { List<String> args ->
 	command + args
 }
 
-def dockerBuildCommand = {
+def sha256Hex = { byte[] bytes ->
+	def digest = java.security.MessageDigest.getInstance('SHA-256').digest(bytes)
+	digest.collect { String.format('%02x', it & 0xff) }.join()
+}
+
+def relativeProjectPath = { File file ->
+	projectDir.toPath().relativize(file.toPath()).toString().replace('\\', '/')
+}
+
+def localSourceFiles = {
+	def sourceFiles = []
+	localSourceHashPaths.each { relativePath ->
+		def path = layout.projectDirectory.file(relativePath).asFile
+		if (path.isDirectory()) {
+			path.eachFileRecurse { file ->
+				if (file.isFile()) {
+					sourceFiles += file
+				}
+			}
+		}
+		else if (path.isFile()) {
+			sourceFiles += path
+		}
+	}
+	sourceFiles.sort { relativeProjectPath(it) }
+}
+
+def localSourceHash = {
+	def entries = localSourceFiles().collect { file ->
+		"${relativeProjectPath(file)}\n${sha256Hex(file.bytes)}"
+	}.join('\n')
+	sha256Hex(entries.getBytes('UTF-8'))
+}
+
+def dockerBuildCommand = { String sourceHash ->
 	[
 		'docker',
 		'build',
 		'--progress=plain',
+		'--label',
+		"${localAppImageSourceHashLabel}=${sourceHash}",
 		'-t',
 		localAppImage,
 		'-f',
@@ -213,10 +264,26 @@ def localAppImageExists = {
 	captureCommand(['docker', 'image', 'inspect', localAppImage]).exitValue == 0
 }
 
-def buildLocalAppImage = {
+def localAppImageSourceHash = {
+	def template = "{{ index .Config.Labels \"${localAppImageSourceHashLabel}\" }}"
+	def result = captureCommand(['docker', 'image', 'inspect', '--format', template, localAppImage])
+	if (result.exitValue != 0) {
+		return null
+	}
+
+	def value = result.output.readLines()
+		.collect { it.trim() }
+		.find { !it.isEmpty() }
+	if (!value || value == '<no value>') {
+		return null
+	}
+	value
+}
+
+def buildLocalAppImage = { String sourceHash ->
 	logger.lifecycle("Building Docker image: ${localAppImage}")
 	logger.lifecycle('Docker build progress will be printed below. The first build can take a few minutes.')
-	runLoggedCommand(dockerBuildCommand())
+	runLoggedCommand(dockerBuildCommand(sourceHash))
 }
 
 dependencies {
@@ -229,11 +296,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
 	implementation 'org.flywaydb:flyway-mysql'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+	annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-actuator-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
@@ -253,7 +324,7 @@ dependencies {
 
 tasks.register('resolveDependencySources') {
 	group = 'verification'
-	description = 'Resolves dependency source JARs so Gradle dependency verification metadata can include them.'
+	description = 'Resolves dependency source JARs, including classified sources, so Gradle dependency verification metadata can include them.'
 
 	doLast {
 		def configurationsToResolve = []
@@ -265,8 +336,25 @@ tasks.register('resolveDependencySources') {
 		}
 
 		def resolvedSourceFiles = [] as Set
+		def standardSourceDependencyCoordinates = [] as Set
+		def classifiedSourceDependencyCoordinates = [] as Set
+
+		configurations.each { configuration ->
+			configuration.dependencies.withType(ExternalModuleDependency).each { dependency ->
+				dependency.artifacts.findAll { it.classifier }.each { artifact ->
+					classifiedSourceDependencyCoordinates.add("${dependency.group}:${dependency.name}:${dependency.version}:sources-${artifact.classifier}")
+				}
+			}
+		}
 
 		configurationsToResolve.unique { it.name }.each { configuration ->
+			configuration.incoming.resolutionResult.allComponents.each { component ->
+				def componentId = component.id
+				if (componentId instanceof ModuleComponentIdentifier) {
+					standardSourceDependencyCoordinates.add("${componentId.group}:${componentId.module}:${componentId.version}:sources")
+				}
+			}
+
 			def sourceArtifacts = configuration.incoming.artifactView {
 				withVariantReselection()
 				lenient(true)
@@ -286,6 +374,18 @@ tasks.register('resolveDependencySources') {
 			}.files.files
 
 			resolvedSourceFiles.addAll(sourceArtifacts)
+		}
+
+		def additionalSourceDependencies = (standardSourceDependencyCoordinates + classifiedSourceDependencyCoordinates)
+			.collect { dependencies.create(it) }
+
+		if (!additionalSourceDependencies.isEmpty()) {
+			def additionalSourceDependencyArray = additionalSourceDependencies.toArray(new Dependency[0])
+			def additionalSourcesConfiguration = configurations.detachedConfiguration(*additionalSourceDependencyArray)
+			additionalSourcesConfiguration.transitive = false
+			resolvedSourceFiles.addAll(additionalSourcesConfiguration.incoming.artifactView {
+				lenient(true)
+			}.files.files)
 		}
 
 		logger.lifecycle("Resolved ${resolvedSourceFiles.size()} dependency source artifact(s).")
@@ -333,7 +433,7 @@ tasks.register('localBuildImage') {
 
 	doLast {
 		assertLocalDockerAllowed('localBuildImage')
-		buildLocalAppImage()
+		buildLocalAppImage(localSourceHash())
 	}
 }
 
@@ -343,8 +443,14 @@ tasks.register('localStart') {
 
 	doLast {
 		assertLocalDockerAllowed('localStart')
+		logger.lifecycle('Checking local source hash...')
+		def sourceHash = localSourceHash()
+		def imageExists = localAppImageExists()
+		def imageSourceHash = imageExists ? localAppImageSourceHash() : null
+		def imageUpToDate = imageSourceHash == sourceHash
 		def runningServices = runningComposeServices()
-		if (runningServices.containsAll(localStackServices) && healthStatus(localAppHealthUrl) == 'HTTP 200') {
+		if (imageUpToDate && runningServices.containsAll(localStackServices) && healthStatus(localAppHealthUrl) == 'HTTP 200') {
+			logger.lifecycle('Source hash unchanged; reusing image.')
 			logger.lifecycle('Flowit local Docker Compose stack is already running.')
 			logger.lifecycle('Application: http://127.0.0.1:8080')
 			logger.lifecycle("Health: ${localAppHealthUrl} (HTTP 200)")
@@ -352,13 +458,24 @@ tasks.register('localStart') {
 			return
 		}
 
-		if (localAppImageExists()) {
+		if (imageUpToDate) {
+			logger.lifecycle('Source hash unchanged; reusing image.')
 			logger.lifecycle("Using existing Docker image: ${localAppImage}")
 			logger.lifecycle('Run ./gradlew localBuildImage when you need to rebuild the application image from source.')
 		}
+		else if (imageExists) {
+			if (imageSourceHash == null) {
+				logger.lifecycle("Docker image source hash is missing; rebuilding Docker image: ${localAppImage}")
+			}
+			else {
+				logger.lifecycle('Source hash changed; rebuilding image.')
+				logger.lifecycle("Rebuilding Docker image: ${localAppImage}")
+			}
+			buildLocalAppImage(sourceHash)
+		}
 		else {
 			logger.lifecycle("Docker image not found: ${localAppImage}")
-			buildLocalAppImage()
+			buildLocalAppImage(sourceHash)
 		}
 
 		runCommand(dockerComposeCommand(['up', '-d']))
@@ -422,6 +539,9 @@ tasks.register('restdocsTest', Test) {
 tasks.named('asciidoctor', AsciidoctorTask) {
 	inputs.dir snippetsDir
 	dependsOn restdocsTest
+	doFirst {
+		delete layout.buildDirectory.dir('docs/asciidoc')
+	}
 	attributes 'snippets': snippetsDir
 	resources {
 		from('src/docs/asciidoc') {
@@ -436,6 +556,9 @@ tasks.register('copyApiDocs', Copy) {
 	dependsOn asciidoctor
 	from layout.buildDirectory.dir('docs/asciidoc')
 	into apiDocsStaticDir
+	doFirst {
+		delete apiDocsStaticDir
+	}
 }
 
 tasks.named('resolveMainClassName') {
