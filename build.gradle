@@ -1,4 +1,7 @@
 import org.asciidoctor.gradle.jvm.AsciidoctorTask
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.DocsType
 
 plugins {
 	id 'java'
@@ -248,8 +251,52 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+tasks.register('resolveDependencySources') {
+	group = 'verification'
+	description = 'Resolves dependency source JARs so Gradle dependency verification metadata can include them.'
+
+	doLast {
+		def configurationsToResolve = []
+		configurationsToResolve.addAll(configurations.findAll { it.canBeResolved })
+
+		def buildscriptClasspath = buildscript.configurations.findByName('classpath')
+		if (buildscriptClasspath != null && buildscriptClasspath.canBeResolved) {
+			configurationsToResolve.add(buildscriptClasspath)
+		}
+
+		def resolvedSourceFiles = [] as Set
+
+		configurationsToResolve.unique { it.name }.each { configuration ->
+			def sourceArtifacts = configuration.incoming.artifactView {
+				withVariantReselection()
+				lenient(true)
+				componentFilter { componentId ->
+					componentId instanceof ModuleComponentIdentifier
+				}
+				attributes {
+					attribute(
+						Category.CATEGORY_ATTRIBUTE,
+						objects.named(Category, Category.DOCUMENTATION)
+					)
+					attribute(
+						DocsType.DOCS_TYPE_ATTRIBUTE,
+						objects.named(DocsType, DocsType.SOURCES)
+					)
+				}
+			}.files.files
+
+			resolvedSourceFiles.addAll(sourceArtifacts)
+		}
+
+		logger.lifecycle("Resolved ${resolvedSourceFiles.size()} dependency source artifact(s).")
+		resolvedSourceFiles.sort { it.name }.each {
+			logger.info("Resolved dependency source artifact: ${it.name}")
+		}
+	}
+}
+
 tasks.named('test') {
-	outputs.dir snippetsDir
+	dependsOn 'copyApiDocs'
 	useJUnitPlatform()
 }
 
@@ -392,6 +439,10 @@ tasks.register('copyApiDocs', Copy) {
 }
 
 tasks.named('resolveMainClassName') {
+	dependsOn copyApiDocs
+}
+
+tasks.named('jar') {
 	dependsOn copyApiDocs
 }
 
