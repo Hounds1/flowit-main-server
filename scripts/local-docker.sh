@@ -8,7 +8,7 @@ LOCAL_APP_IMAGE=flowit-main-server:local
 LOCAL_APP_HEALTH_URL=http://127.0.0.1:8081/actuator/health
 LOCAL_INFRASTRUCTURE_SERVICES="mysql redis prometheus grafana"
 SOURCE_HASH_LABEL=dev.runtime-lab.flowit.source-hash
-SOURCE_HASH_PATHS="src/main src/docs build.gradle settings.gradle gradle Dockerfile .dockerignore"
+SOURCE_HASH_PATHS="src/main src/docs src/test/java/dev/runtime_lab/flowit/docs src/test/resources/org/springframework/restdocs build.gradle settings.gradle gradle Dockerfile .dockerignore"
 
 case "$(uname)" in
   Linux*) IS_LINUX=true ;;
@@ -22,6 +22,28 @@ info () {
 fail () {
     printf '\n%s\n\n' "$*" >&2
     exit 1
+}
+
+run_quiet_with_timeout () {
+    timeout_seconds=$1
+    shift
+
+    "$@" >/dev/null 2>&1 &
+    command_pid=$!
+    elapsed_seconds=0
+
+    while kill -0 "$command_pid" >/dev/null 2>&1; do
+        if [ "$elapsed_seconds" -ge "$timeout_seconds" ]; then
+            kill "$command_pid" >/dev/null 2>&1 || true
+            wait "$command_pid" 2>/dev/null || true
+            return 124
+        fi
+
+        sleep 1
+        elapsed_seconds=$((elapsed_seconds + 1))
+    done
+
+    wait "$command_pid"
 }
 
 hash_file () {
@@ -165,7 +187,11 @@ assert_local_docker_allowed () {
 
 require_docker () {
     if ! command -v docker >/dev/null 2>&1; then
-        fail "ERROR: Docker is required for '$INVOCATION_LABEL'. Start Docker Desktop and make the 'docker' command available."
+        fail "ERROR: Docker is required for '$INVOCATION_LABEL'. Install and start Docker Desktop, then make the 'docker' command available."
+    fi
+
+    if ! run_quiet_with_timeout 5 docker info; then
+        fail "ERROR: Docker Desktop is not running or the Docker Engine is not ready. Start Docker Desktop or start the Docker Engine, wait until it is running, then run '$INVOCATION_LABEL' again."
     fi
 
     if ! docker compose version >/dev/null 2>&1; then

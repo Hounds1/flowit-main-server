@@ -15,15 +15,43 @@
 
 Flowit API 문서의 진입점입니다. API가 추가되면 이 페이지에서 도메인별 문서로 이동할 수 있습니다.
 
-[cols="18,24,26,32",role="api-index"]
-|===
-|분류 |문서 |대표 API |설명
+[%collapsible]
+.표준 API 포맷
+====
 
-|문서 미리보기
+[cols="28,30,42",role="api-index"]
+|===
+|문서 |Endpoint |설명
+
 |link:docs-preview.html[문서 미리보기 API]
 |`POST /api/docs-preview/projects/{projectId}/tasks`
 |커스텀 Spring REST Docs 스니펫의 요청, 응답, 필드 문서 예시를 확인합니다.
+
+|link:api-response.html[공통 응답 포맷]
+|성공/에러 응답 envelope
+|API 응답의 공통 `success`, `data`, `error`, `extensions` 구조를 설명합니다.
+
+|link:error-codes.html[에러 코드]
+|`error.code`
+|클라이언트 다국어 처리와 에러 분기에 사용하는 에러 코드 목록을 설명합니다.
 |===
+
+====
+
+[%collapsible]
+.유저 API
+====
+
+[cols="28,30,42",role="api-index"]
+|===
+|문서 |Endpoint |설명
+
+|link:users-join.html[회원가입 API]
+|`POST /v1/public/users/join`
+|회원가입 API 요청/응답과 중복 이메일 에러 응답을 설명합니다.
+|===
+
+====
 
 == 문서 구성 기준
 

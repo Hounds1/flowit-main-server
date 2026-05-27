@@ -17,7 +17,8 @@ public class SecurityConfig {
 		"/actuator/prometheus",
 		"/api/docs-preview/**",
 		"/docs",
-		"/docs/**"
+		"/docs/**",
+		"/v1/public/users/join"
 	};
 
 	@Bean
