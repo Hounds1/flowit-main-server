@@ -199,6 +199,77 @@ require_docker () {
     fi
 }
 
+sync_local_source_if_needed () {
+    case "$COMMAND" in
+      start | build-image) ;;
+      *) return 0 ;;
+    esac
+
+    if is_truthy "${FLOWIT_SKIP_AUTO_UPDATE:-}"; then
+        info "Local source update skipped because FLOWIT_SKIP_AUTO_UPDATE is set."
+        return 0
+    fi
+
+    if ! command -v git >/dev/null 2>&1; then
+        info "Git is unavailable; skipping local source update."
+        return 0
+    fi
+
+    if ! git -C "$APP_HOME" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        info "Git repository metadata is unavailable; skipping local source update."
+        return 0
+    fi
+
+    upstream=$(git -C "$APP_HOME" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || {
+        info "No upstream branch is configured; skipping local source update."
+        return 0
+    }
+    if [ -z "$upstream" ]; then
+        info "No upstream branch is configured; skipping local source update."
+        return 0
+    fi
+
+    info "Checking for upstream source updates..."
+    if ! git -C "$APP_HOME" fetch --prune --quiet; then
+        info "Could not fetch upstream source updates; continuing with current source."
+        return 0
+    fi
+
+    counts=$(git -C "$APP_HOME" rev-list --left-right --count HEAD...@{u} 2>/dev/null) || {
+        info "Could not compare local source with $upstream; continuing with current source."
+        return 0
+    }
+
+    set -- $counts
+    ahead=${1:-0}
+    behind=${2:-0}
+
+    if [ "$behind" -eq 0 ]; then
+        info "Local source is up to date with $upstream."
+        return 0
+    fi
+
+    if [ -n "$(git -C "$APP_HOME" status --porcelain)" ]; then
+        info "Upstream source has $behind newer commit(s), but local changes are present; skipping automatic update."
+        info "Commit or stash local changes, then run: git pull --ff-only"
+        return 0
+    fi
+
+    if [ "$ahead" -gt 0 ]; then
+        info "Local branch and $upstream have diverged; skipping automatic update."
+        info "Resolve the branch manually, then run $INVOCATION_LABEL again."
+        return 0
+    fi
+
+    info "Updating local source from $upstream ($behind commit(s))..."
+    if git -C "$APP_HOME" merge --ff-only '@{u}'; then
+        info "Local source updated."
+    else
+        info "Automatic source update failed; continuing with current source."
+        info "Run manually when ready: git pull --ff-only"
+    fi
+}
+
 docker_compose () {
     if "$IS_LINUX"; then
         docker compose -f "$APP_HOME/compose.yaml" -f "$APP_HOME/compose.linux.yaml" "$@"
@@ -304,6 +375,7 @@ esac
 
 assert_local_docker_allowed
 require_docker
+sync_local_source_if_needed
 if [ -n "${FLOWIT_GRADLE_FALLBACK_TASK:-}" ]; then
     info "Local Java is unavailable; running './gradlew $FLOWIT_GRADLE_FALLBACK_TASK' through Docker commands."
 fi

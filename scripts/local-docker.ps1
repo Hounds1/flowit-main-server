@@ -66,8 +66,16 @@ function Invoke-Native {
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $executable @arguments
-        return $LASTEXITCODE
+        & $executable @arguments 2>&1 | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                Write-Host $_.Exception.Message
+            }
+            else {
+                Write-Host $_
+            }
+        }
+        $exitCode = $LASTEXITCODE
+        return $exitCode
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
@@ -307,6 +315,111 @@ function Require-Docker {
     }
 }
 
+function Invoke-GitCapture {
+    param([string[]] $Arguments)
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & git -C $AppHome @Arguments 2>&1
+        [PSCustomObject]@{
+            ExitCode = $LASTEXITCODE
+            Output = ($output -join "`n")
+        }
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+
+function Invoke-GitNative {
+    param([string[]] $Arguments)
+
+    Invoke-Native -CommandLine (@('git', '-C', $AppHome) + $Arguments)
+}
+
+function Sync-LocalSourceIfNeeded {
+    if ($Command -notin @('start', 'build-image')) {
+        return
+    }
+
+    if (Test-Truthy $env:FLOWIT_SKIP_AUTO_UPDATE) {
+        Write-Info 'Local source update skipped because FLOWIT_SKIP_AUTO_UPDATE is set.'
+        return
+    }
+
+    if (-not (Test-Command 'git')) {
+        Write-Info 'Git is unavailable; skipping local source update.'
+        return
+    }
+
+    $insideWorkTree = Invoke-GitCapture -Arguments @('rev-parse', '--is-inside-work-tree')
+    if ($insideWorkTree.ExitCode -ne 0) {
+        Write-Info 'Git repository metadata is unavailable; skipping local source update.'
+        return
+    }
+
+    $upstreamResult = Invoke-GitCapture -Arguments @('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}')
+    if ($upstreamResult.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($upstreamResult.Output)) {
+        Write-Info 'No upstream branch is configured; skipping local source update.'
+        return
+    }
+    $upstream = $upstreamResult.Output.Trim()
+
+    Write-Info 'Checking for upstream source updates...'
+    $fetchResult = Invoke-GitCapture -Arguments @('fetch', '--prune', '--quiet')
+    if ($fetchResult.ExitCode -ne 0) {
+        Write-Info 'Could not fetch upstream source updates; continuing with current source.'
+        return
+    }
+
+    $countResult = Invoke-GitCapture -Arguments @('rev-list', '--left-right', '--count', 'HEAD...@{u}')
+    if ($countResult.ExitCode -ne 0) {
+        Write-Info "Could not compare local source with $upstream; continuing with current source."
+        return
+    }
+
+    $counts = $countResult.Output.Trim() -split '\s+'
+    if ($counts.Count -lt 2) {
+        Write-Info "Could not compare local source with $upstream; continuing with current source."
+        return
+    }
+
+    $ahead = [int] $counts[0]
+    $behind = [int] $counts[1]
+    if ($behind -eq 0) {
+        Write-Info "Local source is up to date with $upstream."
+        return
+    }
+
+    $statusResult = Invoke-GitCapture -Arguments @('status', '--porcelain')
+    if ($statusResult.ExitCode -ne 0) {
+        Write-Info 'Could not inspect local source changes; skipping automatic update.'
+        return
+    }
+    if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
+        Write-Info "Upstream source has $behind newer commit(s), but local changes are present; skipping automatic update."
+        Write-Info 'Commit or stash local changes, then run: git pull --ff-only'
+        return
+    }
+
+    if ($ahead -gt 0) {
+        Write-Info "Local branch and $upstream have diverged; skipping automatic update."
+        Write-Info "Resolve the branch manually, then run $InvocationLabel again."
+        return
+    }
+
+    Write-Info "Updating local source from $upstream ($behind commit(s))..."
+    $mergeExitCode = Invoke-GitNative -Arguments @('merge', '--ff-only', '@{u}')
+    if ($mergeExitCode -eq 0) {
+        Write-Info 'Local source updated.'
+    }
+    else {
+        Write-Info 'Automatic source update failed; continuing with current source.'
+        Write-Info 'Run manually when ready: git pull --ff-only'
+    }
+}
+
 function Get-DockerComposeBaseArgs {
     $args = @('compose', '-f', (Join-Path $AppHome 'compose.yaml'))
     if (Test-LinuxHost) {
@@ -425,6 +538,7 @@ try {
 
     Assert-LocalDockerAllowed
     Require-Docker
+    Sync-LocalSourceIfNeeded
     if (-not [string]::IsNullOrWhiteSpace($GradleFallbackTask)) {
         Write-Info "Local Java is unavailable; running '.\gradlew.bat $GradleFallbackTask' through Docker commands."
     }

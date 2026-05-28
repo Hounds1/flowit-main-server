@@ -131,6 +131,8 @@ If a local JDK is installed, the existing Gradle command remains supported.
 애플리케이션 Docker 이미지는 컨테이너 내부에서 Eclipse Temurin Java 17을 사용해 빌드 및 실행됩니다.<br>
 The application Docker image is built and run with Eclipse Temurin Java 17 inside the container.
 
+Before `local.bat start`, `local.bat build-image`, `./local.sh start`, or `./local.sh build-image` builds the image, the script checks the configured upstream branch. If the branch is behind and the worktree is clean, it fetches and fast-forwards automatically with `git merge --ff-only @{u}`. If local changes are present, the branch has diverged, Git/upstream is unavailable, or fetch fails, the script prints a warning and continues with the current source. Set `FLOWIT_SKIP_AUTO_UPDATE=true` to skip this source update check.
+
 서버 환경과 혼동하기 쉬운 Linux에서는 기본적으로 차단됩니다. Linux 로컬 개발 환경에서만 아래처럼 명시적으로 허용하십시오.<br>
 Linux is blocked by default because it is easy to confuse with server environments. Opt in only on a local Linux development machine as shown below.
 
