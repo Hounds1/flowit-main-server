@@ -1,0 +1,54 @@
+= 현재 사용자 조회 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-users-me:
+:breadcrumb-section: 유저 API
+:breadcrumb-current: 현재 사용자 조회 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 현재 사용자 조회
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |`GET`
+|경로 |`/v1/users/me`
+|목적 |인증된 사용자의 기본 정보와 소속 워크스페이스 목록을 조회합니다.
+|인증 |JWT access token이 필요합니다.
+|워크스페이스 |현재는 조회 응답에 필요한 최소 정보만 제공합니다.
+|===
+
+=== HTTP 요청
+
+include::{snippets}/users-me/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/users-me/curl-request.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/users-me/request-headers.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/users-me/http-response.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/users-me/response-fields.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:users-join.html[회원가입 API]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]

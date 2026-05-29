@@ -1,6 +1,6 @@
 package dev.runtime_lab.flowit.docs;
 
-import dev.runtime_lab.flowit.domain.user.controller.UserJoinController;
+import dev.runtime_lab.flowit.domain.user.controller.UserPublicController;
 import dev.runtime_lab.flowit.domain.user.dto.JoinRequest;
 import dev.runtime_lab.flowit.domain.user.dto.JoinResponse;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
@@ -50,7 +50,7 @@ class UserJoinApiDocsTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new UserJoinController(userJoinService))
+			.standaloneSetup(new UserPublicController(userJoinService))
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)
 			.apply(documentationConfiguration(restDocumentation))
