@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class UserJoinControllerTest {
+class UserPublicControllerTest {
 
 	private final UserJoinService userJoinService = mock(UserJoinService.class);
 	private MockMvc mockMvc;
@@ -38,7 +38,7 @@ class UserJoinControllerTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new UserJoinController(userJoinService))
+			.standaloneSetup(new UserPublicController(userJoinService))
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)
 			.build();

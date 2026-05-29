@@ -1,6 +1,6 @@
-package dev.runtime_lab.flowit.domain.user.entity;
+package dev.runtime_lab.flowit.domain.workspace.entity;
 
-import dev.runtime_lab.flowit.domain.file.entity.FileMetadata;
+import dev.runtime_lab.flowit.domain.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,44 +26,43 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Entity
 @Table(
-	name = "users",
+	name = "workspace_members",
 	indexes = {
-		@Index(name = "idx_users_email", columnList = "email"),
-		@Index(name = "idx_users_status", columnList = "status"),
-		@Index(name = "idx_users_deleted_at", columnList = "deleted_at"),
-		@Index(name = "idx_users_profile_image_file_id", columnList = "profile_image_file_id")
+		@Index(name = "idx_workspace_members_workspace_id", columnList = "workspace_id"),
+		@Index(name = "idx_workspace_members_user_id", columnList = "user_id"),
+		@Index(name = "idx_workspace_members_role", columnList = "role"),
+		@Index(name = "idx_workspace_members_deleted_at", columnList = "deleted_at")
 	}
 )
-public class User {
+public class WorkspaceMember {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "email", nullable = false)
-	private String email;
-
-	@Column(name = "password_hash", nullable = false)
-	private String passwordHash;
-
-	@Column(name = "name", nullable = false, length = 100)
-	private String name;
-
-	@OneToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(
-		name = "profile_image_file_id",
-		unique = true,
-		foreignKey = @ForeignKey(name = "fk_users_profile_image_file")
+		name = "workspace_id",
+		nullable = false,
+		foreignKey = @ForeignKey(name = "fk_workspace_members_workspace")
 	)
-	private FileMetadata profileImageFile;
+	private Workspace workspace;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(
+		name = "user_id",
+		nullable = false,
+		foreignKey = @ForeignKey(name = "fk_workspace_members_user")
+	)
+	private User user;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "status", nullable = false, length = 30)
+	@Column(name = "role", nullable = false, length = 30)
 	@Builder.Default
-	private UserStatus status = UserStatus.ACTIVE;
+	private WorkspaceMemberRole role = WorkspaceMemberRole.MEMBER;
 
-	@Column(name = "last_login_at")
-	private Long lastLoginAt;
+	@Column(name = "joined_at", nullable = false)
+	private Long joinedAt;
 
 	@Column(name = "created_at", nullable = false)
 	private Long createdAt;

@@ -70,4 +70,11 @@ endif::nav-users-join[]
 ifndef::nav-users-join[]
 * link:users-join.html[회원가입 API]
 endif::nav-users-join[]
+
+ifdef::nav-users-me[]
+* [.is-current]#현재 사용자 조회 API#
+endif::nav-users-me[]
+ifndef::nav-users-me[]
+* link:users-me.html[현재 사용자 조회 API]
+endif::nav-users-me[]
 --

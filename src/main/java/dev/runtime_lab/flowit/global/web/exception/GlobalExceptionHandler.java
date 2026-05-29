@@ -3,6 +3,7 @@ package dev.runtime_lab.flowit.global.web.exception;
 import dev.runtime_lab.flowit.domain.user.exception.DuplicateActiveEmailException;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidLoginCredentialsException;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidRefreshTokenException;
+import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import dev.runtime_lab.flowit.global.security.password.InvalidPasswordPolicyException;
 import dev.runtime_lab.flowit.global.web.response.ApiError;
 import dev.runtime_lab.flowit.global.web.response.ApiResponse;
@@ -63,6 +64,15 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(InvalidRefreshTokenException.class)
 	public ResponseEntity<ApiResponse<Object>> handleInvalidRefreshToken(InvalidRefreshTokenException exception) {
+		ErrorCode errorCode = ErrorCode.AUTH_401_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
+	}
+
+	@ExceptionHandler(InvalidAuthenticatedUserException.class)
+	public ResponseEntity<ApiResponse<Object>> handleInvalidAuthenticatedUser(InvalidAuthenticatedUserException exception) {
 		ErrorCode errorCode = ErrorCode.AUTH_401_001;
 
 		return ResponseEntity
