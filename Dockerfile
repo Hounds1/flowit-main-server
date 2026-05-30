@@ -10,7 +10,7 @@ RUN ./gradlew --no-daemon --version
 
 COPY src ./src
 
-RUN ./gradlew --no-daemon bootJar \
+RUN ./gradlew --no-daemon -PforceApiDocs=true bootJar \
 	&& JAR_PATH="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit)" \
 	&& cp "$JAR_PATH" flowit.jar
 

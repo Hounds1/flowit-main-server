@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.3-volt'
+version = '0.2.4-volt'
 
 java {
 	toolchain {
@@ -366,8 +366,12 @@ def apiDocsVersionLocked = {
 	integrationNoteVersions().contains(projectVersion())
 }
 
+def forceApiDocsPublication = {
+	isTruthy((project.findProperty('forceApiDocs') ?: '').toString())
+}
+
 def shouldPublishApiDocs = {
-	!apiDocsVersionLocked()
+	forceApiDocsPublication() || !apiDocsVersionLocked()
 }
 
 def logApiDocsPublicationSkip = { String taskName ->
@@ -1008,7 +1012,7 @@ tasks.register('archiveIntegrationNote') {
 
 	doLast {
 		assertIntegrationNoteVersionAligned()
-		if (!shouldPublishApiDocs()) {
+		if (apiDocsVersionLocked()) {
 			logApiDocsPublicationSkip('archiveIntegrationNote')
 			return
 		}
