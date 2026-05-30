@@ -26,6 +26,16 @@ public enum ErrorCode {
 		HttpStatus.CONFLICT,
 		"이미 가입된 이메일입니다.",
 		"활성 사용자 중 동일한 이메일이 이미 존재합니다."
+	),
+	FILE_400_001(
+		HttpStatus.BAD_REQUEST,
+		"프로필 이미지 파일이 올바르지 않습니다.",
+		"프로필 이미지 파일이 비어 있거나 지원하지 않는 이미지 형식입니다."
+	),
+	FILE_500_001(
+		HttpStatus.INTERNAL_SERVER_ERROR,
+		"프로필 이미지 파일 저장에 실패했습니다.",
+		"프로필 이미지 로컬 파일 저장 또는 정리 중 오류가 발생했습니다."
 	);
 
 	private final HttpStatus httpStatus;

@@ -1,17 +1,16 @@
 package dev.runtime_lab.flowit.docs;
 
 import dev.runtime_lab.flowit.domain.user.controller.UserController;
-import dev.runtime_lab.flowit.domain.user.dto.UserMeResponse;
-import dev.runtime_lab.flowit.domain.user.dto.UserMeWorkspaceResponse;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
+import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.service.UserMeService;
 import dev.runtime_lab.flowit.domain.user.service.UserProfileImageUpdateService;
-import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.exception.GlobalExceptionHandler;
 import dev.runtime_lab.flowit.global.web.response.ApiResponseBodyAdvice;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,8 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
+import org.springframework.restdocs.operation.OperationRequest;
+import org.springframework.restdocs.operation.OperationResponse;
+import org.springframework.restdocs.operation.OperationRequestFactory;
+import org.springframework.restdocs.operation.preprocess.OperationPreprocessor;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -36,16 +40,18 @@ import static org.springframework.restdocs.headers.HeaderDocumentation.headerWit
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.multipart;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(RestDocumentationExtension.class)
-class UserMeApiDocsTest {
+class UserProfileImageApiDocsTest {
 
 	private final UserMeService userMeService = mock(UserMeService.class);
 	private final UserProfileImageUpdateService userProfileImageUpdateService = mock(UserProfileImageUpdateService.class);
@@ -67,50 +73,93 @@ class UserMeApiDocsTest {
 	}
 
 	@Test
-	void me() throws Exception {
-		UserMeResponse response = new UserMeResponse(
-			1003L,
-			"user@example.com",
-			"nickname",
-			UserStatus.ACTIVE,
-			3001L,
-			List.of(new UserMeWorkspaceResponse(2001L, "Flowit", "Team workspace", 3L, WorkspaceMemberRole.LEADER, 1779889000L))
-		);
-
-		when(userMeService.getMe(any(CurrentUser.class))).thenReturn(response);
+	void replaceProfileImage() throws Exception {
+		when(userProfileImageUpdateService.replace(any(CurrentUser.class), any()))
+			.thenReturn(new UserProfileImageUpdateResponse(3001L, "image/png", 68L, 1, 1));
 		SecurityContextHolder.getContext().setAuthentication(
 			new JwtAuthenticationToken(jwt("1003", "user@example.com", "nickname"), List.of())
 		);
 
-		mockMvc.perform(get("/v1/users/me")
+		mockMvc.perform(multipart("/v1/users/me/profile-image")
+				.file(profileImage())
+				.with(request -> {
+					request.setMethod("PUT");
+					return request;
+				})
 				.header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+				.contentType(MediaType.MULTIPART_FORM_DATA)
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
-			.andDo(document("users-me",
-				preprocessRequest(prettyPrint()),
+			.andDo(document("users-profile-image",
+				preprocessRequest(omitMultipartBinaryContent()),
 				preprocessResponse(prettyPrint()),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. `Bearer {token}` 형식으로 전달합니다."),
+					headerWithName(HttpHeaders.CONTENT_TYPE).description("요청 본문 미디어 타입입니다. `multipart/form-data`를 사용합니다."),
 					headerWithName(HttpHeaders.ACCEPT).description("클라이언트가 기대하는 응답 미디어 타입입니다.").optional()
+				),
+				requestParts(
+					partWithName("file").description("교체할 프로필 이미지 파일입니다. `image/jpeg`, `image/png`, `image/gif`를 지원합니다.")
 				),
 				responseFields(
 					fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 처리 성공 여부입니다."),
-					fieldWithPath("data").type(JsonFieldType.OBJECT).description("현재 사용자와 워크스페이스 정보입니다."),
-					fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("현재 사용자 식별자입니다."),
-					fieldWithPath("data.email").type(JsonFieldType.STRING).description("현재 사용자 이메일입니다."),
-					fieldWithPath("data.nickname").type(JsonFieldType.STRING).description("현재 사용자 닉네임입니다."),
-					fieldWithPath("data.status").type(JsonFieldType.STRING).description("현재 사용자 상태입니다. link:enum-reference.html#user-status[UserStatus]를 참고합니다."),
-					fieldWithPath("data.profileImageFileId").type(JsonFieldType.NUMBER).description("프로필 이미지 파일 식별자입니다. 등록된 이미지가 없으면 `null`입니다.").optional(),
-					fieldWithPath("data.workspaces").type(JsonFieldType.ARRAY).description("현재 사용자가 속한 워크스페이스 목록입니다."),
-					fieldWithPath("data.workspaces[].id").type(JsonFieldType.NUMBER).description("워크스페이스 식별자입니다."),
-					fieldWithPath("data.workspaces[].name").type(JsonFieldType.STRING).description("워크스페이스 이름입니다."),
-					fieldWithPath("data.workspaces[].description").type(JsonFieldType.STRING).description("워크스페이스 설명입니다.").optional(),
-					fieldWithPath("data.workspaces[].memberCount").type(JsonFieldType.NUMBER).description("워크스페이스의 활성 멤버 수입니다.").attributes(experimental()),
-					fieldWithPath("data.workspaces[].role").type(JsonFieldType.STRING).description("해당 워크스페이스에서 현재 사용자의 권한입니다. link:enum-reference.html#workspace-member-role[WorkspaceMemberRole]을 참고합니다."),
-					fieldWithPath("data.workspaces[].joinedAt").type(JsonFieldType.NUMBER).description("워크스페이스 참여 시각입니다. Unix epoch seconds 기준입니다."),
+					fieldWithPath("data").type(JsonFieldType.OBJECT).description("프로필 이미지 교체 결과 데이터입니다."),
+					fieldWithPath("data.fileId").type(JsonFieldType.NUMBER).description("새로 저장된 프로필 이미지 파일 식별자입니다.").attributes(experimental()),
+					fieldWithPath("data.contentType").type(JsonFieldType.STRING).description("저장된 이미지 MIME type입니다.").attributes(experimental()),
+					fieldWithPath("data.sizeBytes").type(JsonFieldType.NUMBER).description("저장된 이미지 파일 크기입니다. bytes 기준입니다.").attributes(experimental()),
+					fieldWithPath("data.width").type(JsonFieldType.NUMBER).description("저장된 이미지 너비입니다. pixels 기준입니다.").attributes(experimental()),
+					fieldWithPath("data.height").type(JsonFieldType.NUMBER).description("저장된 이미지 높이입니다. pixels 기준입니다.").attributes(experimental()),
 					fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 				)
 			));
+	}
+
+	private OperationPreprocessor omitMultipartBinaryContent() {
+		return new OperationPreprocessor() {
+
+			@Override
+			public OperationRequest preprocess(OperationRequest request) {
+				String boundary = "6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm";
+				String sanitizedContent = """
+					--%s
+					Content-Disposition: form-data; name=file; filename=avatar.png
+					Content-Type: image/png
+
+					<binary image content omitted>
+					--%s--
+					""".formatted(boundary, boundary)
+					.stripIndent()
+					.replace("\n", "\r\n");
+				HttpHeaders headers = new HttpHeaders();
+				headers.set(HttpHeaders.AUTHORIZATION, request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION));
+				headers.setAccept(request.getHeaders().getAccept());
+				headers.set(HttpHeaders.CONTENT_TYPE, MediaType.MULTIPART_FORM_DATA_VALUE);
+
+				return new OperationRequestFactory().create(
+					request.getUri(),
+					request.getMethod(),
+					sanitizedContent.getBytes(StandardCharsets.UTF_8),
+					headers,
+					request.getParts(),
+					request.getCookies()
+				);
+			}
+
+			@Override
+			public OperationResponse preprocess(OperationResponse response) {
+				return response;
+			}
+		};
+	}
+
+	private MockMultipartFile profileImage() {
+		return new MockMultipartFile("file", "avatar.png", "image/png", pngBytes());
+	}
+
+	private byte[] pngBytes() {
+		return Base64.getDecoder().decode(
+			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+		);
 	}
 
 	private Jwt jwt(String subject, String email, String name) {

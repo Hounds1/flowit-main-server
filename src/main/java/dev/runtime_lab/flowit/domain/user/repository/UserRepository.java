@@ -13,6 +13,7 @@ import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.global.jpa.repository.CustomJpaRepo;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -49,6 +50,20 @@ public class UserRepository extends CustomJpaRepo<User, Long> {
 					user.id.eq(id),
 					user.deletedAt.isNull()
 				)
+				.fetchOne()
+		);
+	}
+
+	public Optional<User> findActiveByIdForUpdate(Long id) {
+		QUser user = QUser.user;
+
+		return Optional.ofNullable(
+			queryFactory.selectFrom(user)
+				.where(
+					user.id.eq(id),
+					user.deletedAt.isNull()
+				)
+				.setLockMode(LockModeType.PESSIMISTIC_WRITE)
 				.fetchOne()
 		);
 	}

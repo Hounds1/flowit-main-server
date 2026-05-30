@@ -1,0 +1,29 @@
+// integration-note-source-sha256: febbd0715e171bacfdacbe28a9ceeb1df294302af25183fd48db823b7ef06b94
+// integration-note-version: 0.2.1-volt
+// integration-note-time: 2026-05-30-1843
+// integration-note-time-human: 2026-05-30 18:43 KST
+// integration-note-impact: Added
+// integration-note-target: PUT /v1/users/me/profile-image
+// integration-note-summary: User profile image update API
+// integration-note-anchor: integration-note-0-2-1-volt-2026-05-30-1843-user-profile-image
+
+[#integration-note-0-2-1-volt-2026-05-30-1843-user-profile-image]
+=== User profile image update API
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.1-volt`
+|Archived At |2026-05-30 18:43 KST
+|Impact |Added
+|Target |PUT /v1/users/me/profile-image
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Added:: `PUT /v1/users/me/profile-image` 현재 사용자 프로필 이미지 교체 API가 추가되었습니다.
+--

@@ -1,0 +1,77 @@
+= 유저 프로필 이미지 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-users-profile-image:
+:breadcrumb-section: 유저 API
+:breadcrumb-current: 유저 프로필 이미지 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 프로필 이미지 교체
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |`PUT`
+|경로 |`/v1/users/me/profile-image`
+|목적 |인증된 사용자의 프로필 이미지를 새 이미지로 교체합니다.
+|인증 |JWT access token이 필요합니다.
+|요청 형식 |`multipart/form-data` 요청의 `file` part로 이미지를 전달합니다.
+|지원 형식 |`image/jpeg`, `image/png`, `image/gif`
+|크기 제한 |기본 5MB입니다. 서버 설정 pass:[<code>FLOWIT_PROFILE_IMAGE_MAX_SIZE</code>]에 따라 달라질 수 있습니다.
+|동작 방식 |기존 프로필 이미지 메타데이터 row는 트랜잭션 안에서 제거하고 새 row를 연결합니다. 기존 로컬 파일은 커밋 이후 삭제합니다.
+|===
+
+=== 로컬 저장소
+
+로컬 서버 실행 시 프로필 이미지 파일은 운영체제별 애플리케이션 데이터 디렉터리 아래의 Flowit 전용 디렉터리에 저장합니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|mac-OS |pass:[<code>~/Library/Application Support/Flowit/main-server/profile-images</code>]
+|Windows |pass:[<code>%LOCALAPPDATA%\Flowit\main-server\profile-images</code>]
+|Linux |pass:[<code>${XDG_DATA_HOME:-~/.local/share}/flowit/main-server/profile-images</code>]
+|Override |pass:[<code>FLOWIT_LOCAL_PROFILE_IMAGE_DIR</code>]로 변경할 수 있습니다.
+|===
+
+Override 경로도 반드시 Flowit 전용 pass:[<code>main-server/profile-images</code>] leaf 디렉터리여야 합니다. pass:[<code>Application Support</code>], pass:[<code>Flowit</code>], pass:[<code>main-server</code>]처럼 더 넓은 디렉터리는 저장소 root로 사용할 수 없습니다.
+
+서버 기동 시 orphan cleanup은 이 전용 디렉터리 내부에서만 수행합니다. 또한 pass:[<code>.flowit-profile-images</code>] ownership marker가 없고 비어 있지 않은 디렉터리는 Flowit 저장소로 보지 않으며 정리를 중단합니다.
+
+=== HTTP 요청
+
+include::{snippets}/users-profile-image/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/users-profile-image/curl-request.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/users-profile-image/request-headers.adoc[]
+
+=== 요청 파트
+
+include::{snippets}/users-profile-image/request-parts.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/users-profile-image/http-response.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/users-profile-image/response-fields.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:users-me.html[현재 사용자 조회 API]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]
