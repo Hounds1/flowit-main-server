@@ -1,0 +1,16 @@
+[#integration-notes-series-0-2]
+== 0.2.x Integration Notes
+
+[cols="24,18,18,40",options="header",role="api-index"]
+|===
+|Version |Stage |Notes |Description
+
+|<<integration-notes-0-2-1-volt,`0.2.1-volt`>>
+|Volt
+|1
+|0.2.1 volt 기록입니다.
+
+|===
+
+include::../versions/_0.2.1-volt.adoc[]
+

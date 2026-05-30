@@ -99,6 +99,13 @@ ifndef::nav-users-me[]
 * link:users-me.html[현재 사용자 조회 API]
 endif::nav-users-me[]
 
+ifdef::nav-users-profile-image[]
+* [.is-current]#유저 프로필 이미지 API#
+endif::nav-users-profile-image[]
+ifndef::nav-users-profile-image[]
+* link:users-profile-image.html[유저 프로필 이미지 API]
+endif::nav-users-profile-image[]
+
 [.docs-nav-section-title]
 워크스페이스 API
 

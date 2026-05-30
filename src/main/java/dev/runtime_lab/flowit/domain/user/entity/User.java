@@ -73,4 +73,11 @@ public class User {
 
 	@Column(name = "deleted_at")
 	private Long deletedAt;
+
+	public FileMetadata replaceProfileImageFile(FileMetadata newProfileImageFile, Long updatedAt) {
+		FileMetadata oldProfileImageFile = this.profileImageFile;
+		this.profileImageFile = newProfileImageFile;
+		this.updatedAt = updatedAt;
+		return oldProfileImageFile;
+	}
 }

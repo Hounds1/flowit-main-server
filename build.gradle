@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.0-volt'
+version = '0.2.1-volt'
 
 java {
 	toolchain {
@@ -28,7 +28,6 @@ repositories {
 ext {
 	set('snippetsDir', file("build/generated-snippets"))
 	set('querydslVersion', '5.1.0')
-	set('apiDocsVersion', '0.2.0-volt')
 }
 
 def apiDocsStaticDir = layout.buildDirectory.dir('resources/main/static/docs')
@@ -125,10 +124,18 @@ def sha256Hex = { byte[] bytes ->
 	digest.collect { String.format('%02x', it & 0xff) }.join()
 }
 
-def apiDocsVersion = {
+def projectVersion = {
+	def value = project.version.toString().trim()
+	if (value.isEmpty() || value == 'unspecified') {
+		throw new GradleException('project.version must be set before API docs can be generated.')
+	}
+	value
+}
+
+def requestedApiDocsVersion = {
 	def value = providers.gradleProperty('apiDocsVersion')
 		.orElse(providers.provider {
-			project.ext.has('apiDocsVersion') ? project.ext.get('apiDocsVersion').toString() : project.version.toString()
+			projectVersion()
 		})
 		.get()
 		.trim()
@@ -138,8 +145,36 @@ def apiDocsVersion = {
 	value
 }
 
+def apiDocsVersion = {
+	projectVersion()
+}
+
+def assertApiDocsVersionAligned = {
+	def applicationVersion = projectVersion()
+	def docsVersion = requestedApiDocsVersion()
+	if (docsVersion != applicationVersion) {
+		throw new GradleException(
+			"API docs version must match project.version. project.version=${applicationVersion}, apiDocsVersion=${docsVersion}"
+		)
+	}
+}
+
 def integrationNoteVersion = {
-	(project.findProperty('integrationNoteVersion') ?: apiDocsVersion()).toString().trim()
+	def value = (project.findProperty('integrationNoteVersion') ?: projectVersion()).toString().trim()
+	if (value.isEmpty()) {
+		throw new GradleException('Integration note version must not be blank.')
+	}
+	if (value != projectVersion()) {
+		throw new GradleException(
+			"Integration note version must match project.version. project.version=${projectVersion()}, integrationNoteVersion=${value}"
+		)
+	}
+	value
+}
+
+def assertIntegrationNoteVersionAligned = {
+	assertApiDocsVersionAligned()
+	integrationNoteVersion()
 }
 
 def integrationNoteSafeName = { String value ->
@@ -923,6 +958,9 @@ tasks.register('restdocsTest', Test) {
 	classpath = sourceSets.test.runtimeClasspath
 	outputs.dir snippetsDir
 	useJUnitPlatform()
+	doFirst {
+		assertIntegrationNoteVersionAligned()
+	}
 	filter {
 		includeTestsMatching 'dev.runtime_lab.flowit.docs.*'
 	}
@@ -933,6 +971,7 @@ tasks.register('refreshIntegrationNotes') {
 	group = 'documentation'
 
 	doLast {
+		assertIntegrationNoteVersionAligned()
 		refreshIntegrationArchiveIndex()
 		logger.lifecycle("Integration Notes archive refreshed: ${integrationNoteArchiveIndexFile.asFile}")
 	}
@@ -943,6 +982,7 @@ tasks.register('archiveIntegrationNote') {
 	group = 'documentation'
 
 	doLast {
+		assertIntegrationNoteVersionAligned()
 		def latestFile = integrationNoteLatestFile.asFile
 		if (!latestFile.isFile()) {
 			throw new GradleException("Integration Note latest file does not exist: ${latestFile}")
@@ -1037,6 +1077,7 @@ tasks.named('asciidoctor', AsciidoctorTask) {
 	dependsOn restdocsTest
 	baseDirFollowsSourceFile()
 	doFirst {
+		assertIntegrationNoteVersionAligned()
 		delete layout.buildDirectory.dir('docs/asciidoc')
 	}
 	attributes 'snippets': snippetsDir,

@@ -1,8 +1,10 @@
 package dev.runtime_lab.flowit.global.web.exception;
 
-import dev.runtime_lab.flowit.domain.user.exception.DuplicateActiveEmailException;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidLoginCredentialsException;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidRefreshTokenException;
+import dev.runtime_lab.flowit.domain.file.exception.InvalidProfileImageException;
+import dev.runtime_lab.flowit.domain.file.exception.ProfileImageStorageException;
+import dev.runtime_lab.flowit.domain.user.exception.DuplicateActiveEmailException;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import dev.runtime_lab.flowit.global.security.password.InvalidPasswordPolicyException;
 import dev.runtime_lab.flowit.global.web.response.ApiError;
@@ -15,6 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice(basePackages = "dev.runtime_lab.flowit")
 public class GlobalExceptionHandler {
@@ -78,6 +81,33 @@ public class GlobalExceptionHandler {
 		return ResponseEntity
 			.status(errorCode.getHttpStatus())
 			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
+	}
+
+	@ExceptionHandler(InvalidProfileImageException.class)
+	public ResponseEntity<ApiResponse<Object>> handleInvalidProfileImage(InvalidProfileImageException exception) {
+		ErrorCode errorCode = ErrorCode.FILE_400_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
+	}
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<ApiResponse<Object>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
+		ErrorCode errorCode = ErrorCode.FILE_400_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode, "프로필 이미지 파일 크기가 허용 범위를 초과했습니다.")));
+	}
+
+	@ExceptionHandler(ProfileImageStorageException.class)
+	public ResponseEntity<ApiResponse<Object>> handleProfileImageStorage(ProfileImageStorageException exception) {
+		ErrorCode errorCode = ErrorCode.FILE_500_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode)));
 	}
 
 	private Map<String, String> fieldError(FieldError fieldError) {

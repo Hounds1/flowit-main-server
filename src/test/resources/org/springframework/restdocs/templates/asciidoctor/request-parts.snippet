@@ -1,0 +1,11 @@
+[cols="20,15,65",options="header",role="api-table fields-table"]
+|===
+|파트 |필수 여부 |설명
+
+{{#requestParts}}
+|{{#tableCellContent}}[.field-path]#`+{{name}}+`#{{/tableCellContent}}
+|{{#tableCellContent}}{{#optional}}[.badge.optional]#선택#{{/optional}}{{^optional}}[.badge.required]#필수#{{/optional}}{{/tableCellContent}}
+|{{#tableCellContent}}{{description}}{{/tableCellContent}}
+
+{{/requestParts}}
+|===
