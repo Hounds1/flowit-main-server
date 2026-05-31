@@ -2,7 +2,10 @@ package dev.runtime_lab.flowit.domain.workspace.controller;
 
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateResponse;
+import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessDeniedException;
+import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceNotFoundException;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceCreateService;
+import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceDeleteService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.exception.GlobalExceptionHandler;
@@ -24,9 +27,12 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WorkspaceControllerTest {
 
 	private final WorkspaceCreateService workspaceCreateService = mock(WorkspaceCreateService.class);
+	private final WorkspaceDeleteService workspaceDeleteService = mock(WorkspaceDeleteService.class);
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -43,7 +50,7 @@ class WorkspaceControllerTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new WorkspaceController(workspaceCreateService))
+			.standaloneSetup(new WorkspaceController(workspaceCreateService, workspaceDeleteService))
 			.setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)
@@ -132,6 +139,76 @@ class WorkspaceControllerTest {
 			.andExpect(jsonPath("$.error.code").value("VALIDATION_400_001"))
 			.andExpect(jsonPath("$.error.message").value("요청 값이 올바르지 않습니다."))
 			.andExpect(jsonPath("$.extensions.fieldErrors").isArray());
+	}
+
+	@Test
+	void deleteDeletesWorkspace() throws Exception {
+		ArgumentCaptor<CurrentUser> currentUserCaptor = ArgumentCaptor.forClass(CurrentUser.class);
+		ArgumentCaptor<Long> workspaceIdCaptor = ArgumentCaptor.forClass(Long.class);
+
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data").isMap())
+			.andExpect(jsonPath("$.extensions").isMap());
+
+		verify(workspaceDeleteService).delete(currentUserCaptor.capture(), workspaceIdCaptor.capture());
+		assertEquals(1L, currentUserCaptor.getValue().id());
+		assertEquals("user@example.com", currentUserCaptor.getValue().email());
+		assertEquals("nickname", currentUserCaptor.getValue().name());
+		assertEquals(10L, workspaceIdCaptor.getValue());
+	}
+
+	@Test
+	void deleteReturnsUnauthorizedWhenAuthenticationIsMissing() throws Exception {
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_401_001"))
+			.andExpect(jsonPath("$.error.message").value("Invalid authenticated user."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void deleteReturnsForbiddenWhenCurrentUserIsNotOwner() throws Exception {
+		doThrow(new WorkspaceAccessDeniedException())
+			.when(workspaceDeleteService)
+			.delete(any(CurrentUser.class), eq(10L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_403_001"))
+			.andExpect(jsonPath("$.error.message").value("Workspace owner permission is required."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void deleteReturnsNotFoundWhenWorkspaceIsMissing() throws Exception {
+		doThrow(new WorkspaceNotFoundException())
+			.when(workspaceDeleteService)
+			.delete(any(CurrentUser.class), eq(10L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("WORKSPACE_404_001"))
+			.andExpect(jsonPath("$.error.message").value("Workspace not found."))
+			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
 	private Jwt jwt(String subject, String email, String name) {

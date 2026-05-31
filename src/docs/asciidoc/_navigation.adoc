@@ -129,4 +129,11 @@ endif::nav-workspaces-create[]
 ifndef::nav-workspaces-create[]
 * link:workspaces-create.html[워크스페이스 생성 API]
 endif::nav-workspaces-create[]
+
+ifdef::nav-workspaces-delete[]
+* [.is-current]#워크스페이스 삭제 API#
+endif::nav-workspaces-delete[]
+ifndef::nav-workspaces-delete[]
+* link:workspaces-delete.html[워크스페이스 삭제 API]
+endif::nav-workspaces-delete[]
 --

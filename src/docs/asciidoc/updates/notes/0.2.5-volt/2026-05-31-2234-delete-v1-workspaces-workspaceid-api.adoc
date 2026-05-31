@@ -1,0 +1,29 @@
+// integration-note-source-sha256: f5b0f008f7ec0751b589a6f1119c4de89e169147ce6d403ea5a5e6b65d949e6d
+// integration-note-version: 0.2.5-volt
+// integration-note-time: 2026-05-31-2234
+// integration-note-time-human: 2026-05-31 22:34 KST
+// integration-note-impact: Added
+// integration-note-target: `DELETE /v1/workspaces/{workspaceId}`
+// integration-note-summary: DELETE /v1/workspaces/{workspaceId} 워크스페이스 삭제 API가 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-5-volt-2026-05-31-2234-delete-v1-workspaces-workspaceid-api
+
+[#integration-note-0-2-5-volt-2026-05-31-2234-delete-v1-workspaces-workspaceid-api]
+=== DELETE /v1/workspaces/{workspaceId} 워크스페이스 삭제 API가 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.5-volt`
+|Archived At |2026-05-31 22:34 KST
+|Impact |Added
+|Target |`DELETE /v1/workspaces/{workspaceId}`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Added:: `DELETE /v1/workspaces/{workspaceId}` 워크스페이스 삭제 API가 추가되었습니다.
+--
