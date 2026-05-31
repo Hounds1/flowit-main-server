@@ -61,4 +61,9 @@ public class Workspace {
 
 	@Column(name = "deleted_at")
 	private Long deletedAt;
+
+	public void softDelete(Long deletedAt) {
+		this.deletedAt = deletedAt;
+		this.updatedAt = deletedAt;
+	}
 }

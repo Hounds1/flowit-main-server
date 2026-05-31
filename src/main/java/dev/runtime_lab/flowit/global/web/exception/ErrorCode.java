@@ -27,6 +27,11 @@ public enum ErrorCode {
 		"이미 가입된 이메일입니다.",
 		"활성 사용자 중 동일한 이메일이 이미 존재합니다."
 	),
+	WORKSPACE_404_001(
+		HttpStatus.NOT_FOUND,
+		"워크스페이스를 찾을 수 없습니다.",
+		"요청한 워크스페이스가 존재하지 않거나 삭제되었습니다."
+	),
 	FILE_400_001(
 		HttpStatus.BAD_REQUEST,
 		"프로필 이미지 파일이 올바르지 않습니다.",

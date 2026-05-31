@@ -5,6 +5,8 @@ import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.global.jpa.repository.CustomJpaRepo;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -24,5 +26,19 @@ public class WorkspaceRepository extends CustomJpaRepo<Workspace, Long> {
 			.from(workspace)
 			.where(workspace.inviteCode.eq(inviteCode))
 			.fetchFirst() != null;
+	}
+
+	public Optional<Workspace> findActiveByIdForUpdate(Long id) {
+		QWorkspace workspace = QWorkspace.workspace;
+
+		return Optional.ofNullable(
+			queryFactory.selectFrom(workspace)
+				.where(
+					workspace.id.eq(id),
+					workspace.deletedAt.isNull()
+				)
+				.setLockMode(LockModeType.PESSIMISTIC_WRITE)
+				.fetchOne()
+		);
 	}
 }
