@@ -12,7 +12,9 @@ import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.global.jpa.repository.CustomJpaRepo;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -37,6 +39,21 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 				workspaceMember.deletedAt.isNull()
 			)
 			.fetchFirst() != null;
+	}
+
+	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndUserIdForUpdate(Long workspaceId, Long userId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+
+		return Optional.ofNullable(
+			queryFactory.selectFrom(workspaceMember)
+				.where(
+					workspaceMember.workspace.id.eq(workspaceId),
+					workspaceMember.user.id.eq(userId),
+					workspaceMember.deletedAt.isNull()
+				)
+				.setLockMode(LockModeType.PESSIMISTIC_WRITE)
+				.fetchOne()
+		);
 	}
 
 	public long softDeleteActiveByWorkspaceId(Long workspaceId, Long deletedAt) {

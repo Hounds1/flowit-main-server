@@ -143,4 +143,11 @@ endif::nav-workspaces-delete[]
 ifndef::nav-workspaces-delete[]
 * link:workspaces-delete.html[워크스페이스 삭제 API]
 endif::nav-workspaces-delete[]
+
+ifdef::nav-workspaces-member-remove[]
+* [.is-current]#워크스페이스 멤버 강제 퇴장 API#
+endif::nav-workspaces-member-remove[]
+ifndef::nav-workspaces-member-remove[]
+* link:workspaces-member-remove.html[워크스페이스 멤버 강제 퇴장 API]
+endif::nav-workspaces-member-remove[]
 --

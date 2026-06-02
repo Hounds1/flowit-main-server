@@ -7,5 +7,4 @@ Development Activity Support
 Version Stage:: {api-version-stage} (pass:[<a href="version-policy.html">Version Policy</a>])
 API Status:: {api-version-stage-status}
 
-Maint:: `local.sh`, `gradlew` 를 실행 파일로 추적하도록 변경됩니다.
-Maint:: Auto-Fetch가 정상적으로 수행되지 않는 현상이 수정 되었습니다.
+Github:: Github Actions를 통한 검증으로 `main` 브랜치의 안정성을 상향했습니다.

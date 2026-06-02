@@ -14,4 +14,20 @@ public enum WorkspaceMemberRole {
 	public String authority() {
 		return authority;
 	}
+
+	public boolean isWorkspaceOwner() {
+		return this == OWNER;
+	}
+
+	public boolean isWorkspaceAdmin() {
+		return this == ADMIN;
+	}
+
+	public boolean isWorkspaceMember() {
+		return this == MEMBER;
+	}
+
+	public boolean canRemoveMember() {
+		return this == OWNER || this == ADMIN;
+	}
 }
