@@ -10,8 +10,10 @@ import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
+import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +59,37 @@ class WorkspaceMemberRepositoryTest {
 			any(Predicate.class)
 		);
 		verify(query).fetchFirst();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void findActiveByWorkspaceIdAndUserIdForUpdateReturnsLockedActiveMembership() {
+		JPAQuery<WorkspaceMember> query = mock(JPAQuery.class);
+		User user = activeUser();
+		Workspace workspace = workspace(user);
+		WorkspaceMember workspaceMember = WorkspaceMember.builder()
+			.id(100L)
+			.workspace(workspace)
+			.user(user)
+			.role(WorkspaceMemberRole.ADMIN)
+			.joinedAt(1L)
+			.createdAt(1L)
+			.updatedAt(1L)
+			.build();
+
+		when(queryFactory.selectFrom(QWorkspaceMember.workspaceMember)).thenReturn(query);
+		when(query.where(any(Predicate.class), any(Predicate.class), any(Predicate.class))).thenReturn(query);
+		when(query.setLockMode(LockModeType.PESSIMISTIC_WRITE)).thenReturn(query);
+		when(query.fetchOne()).thenReturn(workspaceMember);
+
+		var found = repository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L);
+
+		assertTrue(found.isPresent());
+		assertEquals(workspaceMember, found.get());
+		verify(queryFactory).selectFrom(QWorkspaceMember.workspaceMember);
+		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
+		verify(query).setLockMode(LockModeType.PESSIMISTIC_WRITE);
+		verify(query).fetchOne();
 	}
 
 	@Test

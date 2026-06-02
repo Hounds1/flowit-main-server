@@ -32,6 +32,11 @@ public enum ErrorCode {
 		"워크스페이스를 찾을 수 없습니다.",
 		"요청한 워크스페이스가 존재하지 않거나 삭제되었습니다."
 	),
+	WORKSPACE_MEMBER_404_001(
+		HttpStatus.NOT_FOUND,
+		"워크스페이스 멤버를 찾을 수 없습니다.",
+		"요청한 사용자가 해당 워크스페이스의 활성 멤버가 아니거나 이미 제거되었습니다."
+	),
 	FILE_400_001(
 		HttpStatus.BAD_REQUEST,
 		"프로필 이미지 파일이 올바르지 않습니다.",

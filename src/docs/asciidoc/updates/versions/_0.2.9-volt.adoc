@@ -1,0 +1,24 @@
+[[integration-notes-0-2-9-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.9 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-06-03 00:36 KST
+|Added
+|`DELETE /v1/workspaces/{workspaceId}/members/{userId}`
+|<<integration-note-0-2-9-volt-2026-06-03-0036-delete-v1-workspaces-workspaceid-members-userid-api,DELETE /v1/workspaces/{workspaceId}/members/{userId} 워크스페이스 멤버 강제 퇴장 API가 추가되었습니다.>>
+
+|===
+
+include::../notes/0.2.9-volt/2026-06-03-0036-delete-v1-workspaces-workspaceid-members-userid-api.adoc[]
+
+++++
+</div>
+</details>
+++++

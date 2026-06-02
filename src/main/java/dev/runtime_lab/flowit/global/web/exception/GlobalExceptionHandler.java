@@ -8,6 +8,8 @@ import dev.runtime_lab.flowit.domain.file.exception.ProfileImageStorageException
 import dev.runtime_lab.flowit.domain.user.exception.DuplicateActiveEmailException;
 import dev.runtime_lab.flowit.domain.user.exception.InvalidCurrentPasswordException;
 import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessDeniedException;
+import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceMemberAccessDeniedException;
+import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceMemberNotFoundException;
 import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceNotFoundException;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import dev.runtime_lab.flowit.global.security.password.InvalidPasswordPolicyException;
@@ -105,9 +107,27 @@ public class GlobalExceptionHandler {
 			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
 	}
 
+	@ExceptionHandler(WorkspaceMemberAccessDeniedException.class)
+	public ResponseEntity<ApiResponse<Object>> handleWorkspaceMemberAccessDenied(WorkspaceMemberAccessDeniedException exception) {
+		ErrorCode errorCode = ErrorCode.AUTH_403_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
+	}
+
 	@ExceptionHandler(WorkspaceNotFoundException.class)
 	public ResponseEntity<ApiResponse<Object>> handleWorkspaceNotFound(WorkspaceNotFoundException exception) {
 		ErrorCode errorCode = ErrorCode.WORKSPACE_404_001;
+
+		return ResponseEntity
+			.status(errorCode.getHttpStatus())
+			.body(ApiResponse.error(ApiError.from(errorCode, exception.getMessage())));
+	}
+
+	@ExceptionHandler(WorkspaceMemberNotFoundException.class)
+	public ResponseEntity<ApiResponse<Object>> handleWorkspaceMemberNotFound(WorkspaceMemberNotFoundException exception) {
+		ErrorCode errorCode = ErrorCode.WORKSPACE_MEMBER_404_001;
 
 		return ResponseEntity
 			.status(errorCode.getHttpStatus())

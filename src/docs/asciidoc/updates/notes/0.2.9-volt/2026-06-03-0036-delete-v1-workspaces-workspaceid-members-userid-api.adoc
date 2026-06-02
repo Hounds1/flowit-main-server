@@ -1,0 +1,30 @@
+// integration-note-source-sha256: 2f67f6f57c626142972307a40a18e9c1926ca49dc8204bb3fab19a168d2d9f69
+// integration-note-version: 0.2.9-volt
+// integration-note-time: 2026-06-03-0036
+// integration-note-time-human: 2026-06-03 00:36 KST
+// integration-note-impact: Added
+// integration-note-target: `DELETE /v1/workspaces/{workspaceId}/members/{userId}`
+// integration-note-summary: DELETE /v1/workspaces/{workspaceId}/members/{userId} 워크스페이스 멤버 강제 퇴장 API가 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-9-volt-2026-06-03-0036-delete-v1-workspaces-workspaceid-members-userid-api
+
+[#integration-note-0-2-9-volt-2026-06-03-0036-delete-v1-workspaces-workspaceid-members-userid-api]
+=== DELETE /v1/workspaces/{workspaceId}/members/{userId} 워크스페이스 멤버 강제 퇴장 API가 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.9-volt`
+|Archived At |2026-06-03 00:36 KST
+|Impact |Added
+|Target |`DELETE /v1/workspaces/{workspaceId}/members/{userId}`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Added:: `DELETE /v1/workspaces/{workspaceId}/members/{userId}` 워크스페이스 멤버 강제 퇴장 API가 추가되었습니다.
+Additional:: 강제 퇴장은 요청자가 `OWNER` 또는 `ADMIN`일 때만 허용됩니다. `OWNER` 대상 강제 퇴장과 자기 자신 강제 퇴장은 허용되지 않습니다.
+--
