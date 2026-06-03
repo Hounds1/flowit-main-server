@@ -30,4 +30,16 @@ public enum WorkspaceMemberRole {
 	public boolean canRemoveMember() {
 		return this == OWNER || this == ADMIN;
 	}
+
+	public boolean canUpdateMemberRoleTo(WorkspaceMemberRole targetRole) {
+		if (this == OWNER) {
+			return true;
+		}
+
+		if (this == ADMIN) {
+			return targetRole != OWNER;
+		}
+
+		return false;
+	}
 }

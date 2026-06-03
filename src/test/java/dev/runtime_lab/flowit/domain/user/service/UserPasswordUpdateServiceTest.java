@@ -4,7 +4,7 @@ import dev.runtime_lab.flowit.domain.user.dto.UserPasswordUpdateRequest;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.exception.InvalidCurrentPasswordException;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import dev.runtime_lab.flowit.global.security.password.InvalidPasswordPolicyException;
@@ -12,7 +12,6 @@ import dev.runtime_lab.flowit.global.security.password.PasswordPolicy;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -25,12 +24,12 @@ import static org.mockito.Mockito.when;
 
 class UserPasswordUpdateServiceTest {
 
-	private final UserRepository userRepository = mock(UserRepository.class);
+	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
 	private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 	private final PasswordPolicy passwordPolicy = new PasswordPolicy();
 	private final Clock clock = Clock.fixed(Instant.parse("2026-05-30T12:00:00Z"), ZoneOffset.UTC);
 	private final UserPasswordUpdateService userPasswordUpdateService = new UserPasswordUpdateService(
-		userRepository,
+		currentUserProvider,
 		passwordEncoder,
 		passwordPolicy,
 		clock
@@ -49,7 +48,7 @@ class UserPasswordUpdateServiceTest {
 			.updatedAt(1L)
 			.build();
 
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class))).thenReturn(user);
 		when(passwordEncoder.matches("oldPassword", "old-hash")).thenReturn(true);
 		when(passwordEncoder.encode("newPassword")).thenReturn("new-hash");
 
@@ -61,14 +60,15 @@ class UserPasswordUpdateServiceTest {
 		assertEquals("new-hash", user.getPasswordHash());
 		assertEquals(8L, user.getTokenVersion());
 		assertEquals(1_780_142_400L, user.getUpdatedAt());
-		verify(userRepository).findActiveByIdForUpdate(1L);
+		verify(currentUserProvider).findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class));
 		verify(passwordEncoder).matches("oldPassword", "old-hash");
 		verify(passwordEncoder).encode("newPassword");
 	}
 
 	@Test
 	void updateRejectsMissingUser() {
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class)))
+			.thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -77,23 +77,14 @@ class UserPasswordUpdateServiceTest {
 				new UserPasswordUpdateRequest("oldPassword", "newPassword")
 			)
 		);
-		verify(userRepository).findActiveByIdForUpdate(1L);
+		verify(currentUserProvider).findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class));
 		verify(passwordEncoder, never()).matches("oldPassword", "old-hash");
 	}
 
 	@Test
 	void updateRejectsInactiveUser() {
-		User user = User.builder()
-			.id(1L)
-			.email("user@example.com")
-			.passwordHash("old-hash")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1L)
-			.updatedAt(1L)
-			.build();
-
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class)))
+			.thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -118,7 +109,7 @@ class UserPasswordUpdateServiceTest {
 			.updatedAt(1L)
 			.build();
 
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class))).thenReturn(user);
 		when(passwordEncoder.matches("wrongPassword", "old-hash")).thenReturn(false);
 
 		assertThrows(
@@ -142,6 +133,6 @@ class UserPasswordUpdateServiceTest {
 				new UserPasswordUpdateRequest("oldPassword", "newPassword!")
 			)
 		);
-		verify(userRepository, never()).findActiveByIdForUpdate(1L);
+		verify(currentUserProvider, never()).findActiveForUpdate(org.mockito.ArgumentMatchers.any(CurrentUser.class));
 	}
 }

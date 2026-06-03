@@ -2,9 +2,9 @@ package dev.runtime_lab.flowit.domain.user.service;
 
 import dev.runtime_lab.flowit.domain.user.dto.UserMeResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserMeWorkspaceResponse;
-import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
@@ -23,8 +23,13 @@ import static org.mockito.Mockito.when;
 class UserMeServiceTest {
 
 	private final UserRepository userRepository = mock(UserRepository.class);
+	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
 	private final WorkspaceMemberRepository workspaceMemberRepository = mock(WorkspaceMemberRepository.class);
-	private final UserMeService userMeService = new UserMeService(userRepository, workspaceMemberRepository);
+	private final UserMeService userMeService = new UserMeService(
+		userRepository,
+		currentUserProvider,
+		workspaceMemberRepository
+	);
 
 	@Test
 	void getMeReturnsUserAndWorkspaceMemberships() {
@@ -68,61 +73,44 @@ class UserMeServiceTest {
 			new UserMeWorkspaceResponse(10L, "Flowit", "Team workspace", 3L, WorkspaceMemberRole.OWNER, 2L)
 		);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(activeUser()));
+		CurrentUser currentUser = new CurrentUser(1L, "claim@example.com", "claim-name");
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(mock(dev.runtime_lab.flowit.domain.user.entity.User.class));
 		when(workspaceMemberRepository.findActiveUserWorkspaces(1L)).thenReturn(expected);
 
-		List<UserMeWorkspaceResponse> response = userMeService.getMeWorkspaces(
-			new CurrentUser(1L, "claim@example.com", "claim-name")
-		);
+		List<UserMeWorkspaceResponse> response = userMeService.getMeWorkspaces(currentUser);
 
 		assertSame(expected, response);
 		assertEquals(10L, response.get(0).id());
 		assertEquals(3L, response.get(0).memberCount());
 		assertEquals(WorkspaceMemberRole.OWNER, response.get(0).role());
-		verify(userRepository).findActiveById(1L);
+		verify(currentUserProvider).findActive(currentUser);
 		verify(workspaceMemberRepository).findActiveUserWorkspaces(1L);
 	}
 
 	@Test
 	void getMeWorkspacesRejectsMissingUser() {
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.empty());
+		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
+
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
-			() -> userMeService.getMeWorkspaces(new CurrentUser(1L, "user@example.com", "nickname"))
+			() -> userMeService.getMeWorkspaces(currentUser)
 		);
-		verify(userRepository).findActiveById(1L);
+		verify(currentUserProvider).findActive(currentUser);
 	}
 
 	@Test
 	void getMeWorkspacesRejectsInactiveUser() {
-		User lockedUser = User.builder()
-			.id(1L)
-			.email("user@example.com")
-			.passwordHash("hash")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1L)
-			.updatedAt(1L)
-			.build();
+		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(lockedUser));
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
-			() -> userMeService.getMeWorkspaces(new CurrentUser(1L, "user@example.com", "nickname"))
+			() -> userMeService.getMeWorkspaces(currentUser)
 		);
-		verify(userRepository).findActiveById(1L);
-	}
-
-	private User activeUser() {
-		return User.builder()
-			.id(1L)
-			.email("user@example.com")
-			.passwordHash("hash")
-			.name("nickname")
-			.createdAt(1L)
-			.updatedAt(1L)
-			.build();
+		verify(currentUserProvider).findActive(currentUser);
 	}
 }

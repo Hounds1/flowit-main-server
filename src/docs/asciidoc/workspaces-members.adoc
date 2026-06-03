@@ -63,6 +63,7 @@ include::{snippets}/workspaces-members/response-fields.adoc[]
 
 * link:workspaces-create.html[워크스페이스 생성 API]
 * link:workspaces-delete.html[워크스페이스 삭제 API]
+* link:workspaces-member-role-update.html[워크스페이스 멤버 역할 변경 API]
 * link:workspaces-member-remove.html[워크스페이스 멤버 강제 퇴장 API]
 * link:users-me-workspaces.html[현재 사용자 워크스페이스 목록 API]
 * link:api-response.html[공통 응답 포맷]

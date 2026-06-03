@@ -1,0 +1,31 @@
+// integration-note-source-sha256: fa6660360b9f5c9d045f6b617e6fac008e136fa850fcd24afa300e60a3b34734
+// integration-note-version: 0.2.11-volt
+// integration-note-time: 2026-06-03-1832
+// integration-note-time-human: 2026-06-03 18:32 KST
+// integration-note-impact: Added
+// integration-note-target: `PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+// integration-note-summary: PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role 워크스페이스 멤버 역할 변경 API가 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-11-volt-2026-06-03-1832-patch-v1-workspaces-workspaceid-members-memberid-role-api
+
+[#integration-note-0-2-11-volt-2026-06-03-1832-patch-v1-workspaces-workspaceid-members-memberid-role-api]
+=== PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role 워크스페이스 멤버 역할 변경 API가 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.11-volt`
+|Archived At |2026-06-03 18:32 KST
+|Impact |Added
+|Target |`PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Added:: `PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role` 워크스페이스 멤버 역할 변경 API가 추가되었습니다.
+Additional:: 역할 변경은 `OWNER` 또는 `ADMIN`만 수행할 수 있습니다. `ADMIN`의 `OWNER` 부여와 마지막 `OWNER` 강등은 거부됩니다.
+Changed:: 멤버 강제 퇴장 API의 대상 식별자를 사용자 ID가 아닌 워크스페이스 멤버 ID(`memberId`) 기준으로 변경했습니다.
+--
