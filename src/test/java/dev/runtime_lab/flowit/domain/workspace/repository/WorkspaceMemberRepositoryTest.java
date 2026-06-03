@@ -97,6 +97,37 @@ class WorkspaceMemberRepositoryTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
+	void findActiveByWorkspaceIdAndMemberIdForUpdateReturnsLockedActiveMembership() {
+		JPAQuery<WorkspaceMember> query = mock(JPAQuery.class);
+		User user = activeUser();
+		Workspace workspace = workspace(user);
+		WorkspaceMember workspaceMember = WorkspaceMember.builder()
+			.id(100L)
+			.workspace(workspace)
+			.user(user)
+			.role(WorkspaceMemberRole.ADMIN)
+			.joinedAt(1L)
+			.createdAt(1L)
+			.updatedAt(1L)
+			.build();
+
+		when(queryFactory.selectFrom(QWorkspaceMember.workspaceMember)).thenReturn(query);
+		when(query.where(any(Predicate.class), any(Predicate.class), any(Predicate.class))).thenReturn(query);
+		when(query.setLockMode(LockModeType.PESSIMISTIC_WRITE)).thenReturn(query);
+		when(query.fetchOne()).thenReturn(workspaceMember);
+
+		var found = repository.findActiveByWorkspaceIdAndMemberIdForUpdate(10L, 100L);
+
+		assertTrue(found.isPresent());
+		assertEquals(workspaceMember, found.get());
+		verify(queryFactory).selectFrom(QWorkspaceMember.workspaceMember);
+		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
+		verify(query).setLockMode(LockModeType.PESSIMISTIC_WRITE);
+		verify(query).fetchOne();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
 	void findActiveByWorkspaceIdAndUserIdReturnsActiveMembership() {
 		JPAQuery<WorkspaceMember> query = mock(JPAQuery.class);
 		User user = activeUser();
@@ -152,6 +183,26 @@ class WorkspaceMemberRepositoryTest {
 		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
 		verify(query).orderBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
 		verify(query).fetch();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void countActiveOwnersByWorkspaceIdReturnsOwnerCount() {
+		JPAQuery<Long> query = mock(JPAQuery.class);
+
+		when(queryFactory.select(org.mockito.ArgumentMatchers.<com.querydsl.core.types.Expression<Long>>any()))
+			.thenReturn(query);
+		when(query.from(QWorkspaceMember.workspaceMember)).thenReturn(query);
+		when(query.where(any(Predicate.class), any(Predicate.class), any(Predicate.class))).thenReturn(query);
+		when(query.fetchOne()).thenReturn(2L);
+
+		long count = repository.countActiveOwnersByWorkspaceId(10L);
+
+		assertEquals(2L, count);
+		verify(queryFactory).select(org.mockito.ArgumentMatchers.<com.querydsl.core.types.Expression<Long>>any());
+		verify(query).from(QWorkspaceMember.workspaceMember);
+		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
+		verify(query).fetchOne();
 	}
 
 	@Test

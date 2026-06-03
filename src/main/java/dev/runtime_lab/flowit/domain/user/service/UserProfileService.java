@@ -11,10 +11,8 @@ import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserUpdateRequest;
 import dev.runtime_lab.flowit.domain.user.dto.UserUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.entity.User;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
-import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +28,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class UserProfileService {
 
-	private final UserRepository userRepository;
+	private final CurrentUserProvider currentUserProvider;
 	private final FileMetadataRepository fileMetadataRepository;
 	private final LocalProfileImageStorage localProfileImageStorage;
 	private final Clock clock;
 
 	@Transactional
 	public UserUpdateResponse update(CurrentUser currentUser, UserUpdateRequest request) {
-		User user = userRepository.findActiveByIdForUpdate(currentUser.id())
-			.filter(foundUser -> foundUser.getStatus() == UserStatus.ACTIVE)
-			.orElseThrow(InvalidAuthenticatedUserException::new);
+		User user = currentUserProvider.findActiveForUpdate(currentUser);
 
 		Long updatedAt = Instant.now(clock).getEpochSecond();
 		if (request.nickname() != null) {
@@ -51,9 +47,7 @@ public class UserProfileService {
 
 	@Transactional
 	public UserProfileImageUpdateResponse replaceProfileImage(CurrentUser currentUser, MultipartFile imageFile) {
-		User user = userRepository.findActiveByIdForUpdate(currentUser.id())
-			.filter(foundUser -> foundUser.getStatus() == UserStatus.ACTIVE)
-			.orElseThrow(InvalidAuthenticatedUserException::new);
+		User user = currentUserProvider.findActiveForUpdate(currentUser);
 
 		StoredProfileImageFile storedFile = localProfileImageStorage.store(user.getId(), imageFile);
 		registerNewFileRollbackCleanup(storedFile.storageKey());
@@ -84,9 +78,7 @@ public class UserProfileService {
 
 	@Transactional(readOnly = true)
 	public UserProfileImageContentResponse getProfileImage(CurrentUser currentUser) {
-		User user = userRepository.findActiveById(currentUser.id())
-			.filter(foundUser -> foundUser.getStatus() == UserStatus.ACTIVE)
-			.orElseThrow(InvalidAuthenticatedUserException::new);
+		User user = currentUserProvider.findActive(currentUser);
 
 		FileMetadata profileImageFile = user.getProfileImageFile();
 		if (profileImageFile == null) {

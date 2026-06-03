@@ -12,13 +12,12 @@ import dev.runtime_lab.flowit.domain.user.dto.UserUpdateRequest;
 import dev.runtime_lab.flowit.domain.user.dto.UserUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,12 +35,12 @@ import static org.mockito.Mockito.when;
 
 class UserProfileServiceTest {
 
-	private final UserRepository userRepository = mock(UserRepository.class);
+	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
 	private final FileMetadataRepository fileMetadataRepository = mock(FileMetadataRepository.class);
 	private final LocalProfileImageStorage localProfileImageStorage = mock(LocalProfileImageStorage.class);
 	private final Clock clock = Clock.fixed(Instant.parse("2026-05-30T12:00:00Z"), ZoneOffset.UTC);
 	private final UserProfileService service = new UserProfileService(
-		userRepository,
+		currentUserProvider,
 		fileMetadataRepository,
 		localProfileImageStorage,
 		clock
@@ -50,7 +49,7 @@ class UserProfileServiceTest {
 	@Test
 	void updateChangesCurrentUserNickname() {
 		User user = activeUser(null);
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class))).thenReturn(user);
 
 		UserUpdateResponse response = service.update(
 			new CurrentUser(1L, "claim@example.com", "claim-name"),
@@ -64,12 +63,13 @@ class UserProfileServiceTest {
 		assertEquals("new-nickname", response.nickname());
 		assertEquals(UserStatus.ACTIVE, response.status());
 		assertEquals(1_780_142_400L, response.updatedAt());
-		verify(userRepository).findActiveByIdForUpdate(1L);
+		verify(currentUserProvider).findActiveForUpdate(any(CurrentUser.class));
 	}
 
 	@Test
 	void updateRejectsMissingUser() {
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class)))
+			.thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -78,13 +78,13 @@ class UserProfileServiceTest {
 				new UserUpdateRequest("new-nickname")
 			)
 		);
-		verify(userRepository).findActiveByIdForUpdate(1L);
+		verify(currentUserProvider).findActiveForUpdate(any(CurrentUser.class));
 	}
 
 	@Test
 	void updateRejectsInactiveUser() {
-		User user = activeUser(null, UserStatus.LOCKED);
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class)))
+			.thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -103,7 +103,7 @@ class UserProfileServiceTest {
 		User user = activeUser(oldFileMetadata);
 		ArgumentCaptor<FileMetadata> fileMetadataCaptor = ArgumentCaptor.forClass(FileMetadata.class);
 
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class))).thenReturn(user);
 		when(localProfileImageStorage.store(1L, multipartFile))
 			.thenReturn(new StoredProfileImageFile("users/1/new.png", "avatar.png", "image/png", 68L, 1, 1));
 		when(fileMetadataRepository.save(fileMetadataCaptor.capture())).thenReturn(savedFileMetadata);
@@ -133,7 +133,8 @@ class UserProfileServiceTest {
 	@Test
 	void replaceProfileImageRejectsMissingUserBeforeWritingFile() {
 		MultipartFile multipartFile = mock(MultipartFile.class);
-		when(userRepository.findActiveByIdForUpdate(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class)))
+			.thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -150,7 +151,7 @@ class UserProfileServiceTest {
 		FileMetadata profileImageFile = fileMetadata(3001L, "users/1/avatar.png");
 		User user = activeUser(profileImageFile);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(any(CurrentUser.class))).thenReturn(user);
 		when(localProfileImageStorage.load("users/1/avatar.png")).thenReturn(new ProfileImageFileContent(bytes));
 
 		UserProfileImageContentResponse response = service.getProfileImage(
@@ -160,13 +161,13 @@ class UserProfileServiceTest {
 		assertEquals("image/png", response.contentType());
 		assertEquals(3L, response.contentLength());
 		assertArrayEquals(bytes, response.bytes());
-		verify(userRepository).findActiveById(1L);
+		verify(currentUserProvider).findActive(any(CurrentUser.class));
 		verify(localProfileImageStorage).load("users/1/avatar.png");
 	}
 
 	@Test
 	void getProfileImageRejectsMissingUser() {
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActive(any(CurrentUser.class))).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -177,8 +178,7 @@ class UserProfileServiceTest {
 
 	@Test
 	void getProfileImageRejectsInactiveUser() {
-		User user = activeUser(null, UserStatus.LOCKED);
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(any(CurrentUser.class))).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(
 			InvalidAuthenticatedUserException.class,
@@ -190,7 +190,7 @@ class UserProfileServiceTest {
 	@Test
 	void getProfileImageRejectsUserWithoutProfileImage() {
 		User user = activeUser(null);
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(any(CurrentUser.class))).thenReturn(user);
 
 		assertThrows(
 			ProfileImageNotFoundException.class,

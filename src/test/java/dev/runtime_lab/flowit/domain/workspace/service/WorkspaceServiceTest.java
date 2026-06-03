@@ -1,8 +1,7 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
 import dev.runtime_lab.flowit.domain.user.entity.User;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateResponse;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
@@ -33,13 +32,13 @@ import static org.mockito.Mockito.when;
 
 class WorkspaceServiceTest {
 
-	private final UserRepository userRepository = mock(UserRepository.class);
+	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
 	private final WorkspaceRepository workspaceRepository = mock(WorkspaceRepository.class);
 	private final WorkspaceMemberRepository workspaceMemberRepository = mock(WorkspaceMemberRepository.class);
 	private final WorkspaceInviteCodeGenerator workspaceInviteCodeGenerator = mock(WorkspaceInviteCodeGenerator.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1779889000L), ZoneOffset.UTC);
 	private final WorkspaceService workspaceService = new WorkspaceService(
-		userRepository,
+		currentUserProvider,
 		workspaceRepository,
 		workspaceMemberRepository,
 		workspaceInviteCodeGenerator,
@@ -63,7 +62,7 @@ class WorkspaceServiceTest {
 		ArgumentCaptor<Workspace> workspaceCaptor = ArgumentCaptor.forClass(Workspace.class);
 		ArgumentCaptor<WorkspaceMember> workspaceMemberCaptor = ArgumentCaptor.forClass(WorkspaceMember.class);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(creator));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(creator);
 		when(workspaceInviteCodeGenerator.generate()).thenReturn("A1B2-C3D4-E5F6");
 		when(workspaceRepository.existsByInviteCode("A1B2-C3D4-E5F6")).thenReturn(false);
 		when(workspaceRepository.save(workspaceCaptor.capture())).thenReturn(savedWorkspace);
@@ -106,7 +105,7 @@ class WorkspaceServiceTest {
 			.build();
 		ArgumentCaptor<Workspace> workspaceCaptor = ArgumentCaptor.forClass(Workspace.class);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(creator));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(creator);
 		when(workspaceInviteCodeGenerator.generate())
 			.thenReturn("DUPL-CODE-0001")
 			.thenReturn("A1B2-C3D4-E5F6");
@@ -124,7 +123,7 @@ class WorkspaceServiceTest {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 		WorkspaceCreateRequest request = new WorkspaceCreateRequest("Flowit", null);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(InvalidAuthenticatedUserException.class, () -> workspaceService.create(currentUser, request));
 		verify(workspaceRepository, never()).save(org.mockito.ArgumentMatchers.any(Workspace.class));
@@ -135,17 +134,7 @@ class WorkspaceServiceTest {
 	void createRejectsInactiveUser() {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 		WorkspaceCreateRequest request = new WorkspaceCreateRequest("Flowit", null);
-		User user = User.builder()
-			.id(1L)
-			.email("user@example.com")
-			.passwordHash("hash")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1L)
-			.updatedAt(1L)
-			.build();
-
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(InvalidAuthenticatedUserException.class, () -> workspaceService.create(currentUser, request));
 		verify(workspaceRepository, never()).save(org.mockito.ArgumentMatchers.any(Workspace.class));
@@ -157,7 +146,7 @@ class WorkspaceServiceTest {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 		WorkspaceCreateRequest request = new WorkspaceCreateRequest("Flowit", null);
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(activeUser()));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(activeUser());
 		when(workspaceInviteCodeGenerator.generate()).thenReturn("DUPL-CODE-0001");
 		when(workspaceRepository.existsByInviteCode("DUPL-CODE-0001")).thenReturn(true);
 
@@ -172,7 +161,7 @@ class WorkspaceServiceTest {
 		User user = activeUser();
 		Workspace workspace = workspace();
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(user);
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
 		when(workspaceMemberRepository.existsActiveOwnerByWorkspaceAndUser(workspace, user)).thenReturn(true);
 
@@ -187,7 +176,7 @@ class WorkspaceServiceTest {
 	void deleteRejectsMissingUser() {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.empty());
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(InvalidAuthenticatedUserException.class, () -> workspaceService.delete(currentUser, 10L));
 		verify(workspaceRepository, never()).findActiveByIdForUpdate(10L);
@@ -197,17 +186,7 @@ class WorkspaceServiceTest {
 	@Test
 	void deleteRejectsInactiveUser() {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
-		User user = User.builder()
-			.id(1L)
-			.email("user@example.com")
-			.passwordHash("hash")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1L)
-			.updatedAt(1L)
-			.build();
-
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(currentUser)).thenThrow(new InvalidAuthenticatedUserException());
 
 		assertThrows(InvalidAuthenticatedUserException.class, () -> workspaceService.delete(currentUser, 10L));
 		verify(workspaceRepository, never()).findActiveByIdForUpdate(10L);
@@ -218,7 +197,7 @@ class WorkspaceServiceTest {
 	void deleteRejectsMissingWorkspace() {
 		CurrentUser currentUser = new CurrentUser(1L, "user@example.com", "nickname");
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(activeUser()));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(activeUser());
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.empty());
 
 		assertThrows(WorkspaceNotFoundException.class, () -> workspaceService.delete(currentUser, 10L));
@@ -231,7 +210,7 @@ class WorkspaceServiceTest {
 		User user = activeUser();
 		Workspace workspace = workspace();
 
-		when(userRepository.findActiveById(1L)).thenReturn(Optional.of(user));
+		when(currentUserProvider.findActive(currentUser)).thenReturn(user);
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
 		when(workspaceMemberRepository.existsActiveOwnerByWorkspaceAndUser(workspace, user)).thenReturn(false);
 

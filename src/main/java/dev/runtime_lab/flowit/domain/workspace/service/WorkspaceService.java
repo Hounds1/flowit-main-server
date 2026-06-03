@@ -1,8 +1,7 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
 import dev.runtime_lab.flowit.domain.user.entity.User;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateResponse;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
@@ -14,7 +13,6 @@ import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceNotFoundExcept
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceRepository;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
-import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +25,7 @@ public class WorkspaceService {
 
 	private static final int MAX_INVITE_CODE_GENERATION_ATTEMPTS = 10;
 
-	private final UserRepository userRepository;
+	private final CurrentUserProvider currentUserProvider;
 	private final WorkspaceRepository workspaceRepository;
 	private final WorkspaceMemberRepository workspaceMemberRepository;
 	private final WorkspaceInviteCodeGenerator workspaceInviteCodeGenerator;
@@ -35,7 +33,7 @@ public class WorkspaceService {
 
 	@Transactional
 	public WorkspaceCreateResponse create(CurrentUser currentUser, WorkspaceCreateRequest request) {
-		User creator = findActiveCurrentUser(currentUser);
+		User creator = currentUserProvider.findActive(currentUser);
 
 		long now = Instant.now(clock).getEpochSecond();
 		Workspace workspace = workspaceRepository.save(Workspace.builder()
@@ -61,7 +59,7 @@ public class WorkspaceService {
 
 	@Transactional
 	public void delete(CurrentUser currentUser, Long workspaceId) {
-		User user = findActiveCurrentUser(currentUser);
+		User user = currentUserProvider.findActive(currentUser);
 
 		Workspace workspace = workspaceRepository.findActiveByIdForUpdate(workspaceId)
 			.orElseThrow(WorkspaceNotFoundException::new);
@@ -73,12 +71,6 @@ public class WorkspaceService {
 		Long deletedAt = Instant.now(clock).getEpochSecond();
 		workspace.softDelete(deletedAt);
 		workspaceMemberRepository.softDeleteActiveByWorkspaceId(workspace.getId(), deletedAt);
-	}
-
-	private User findActiveCurrentUser(CurrentUser currentUser) {
-		return userRepository.findActiveById(currentUser.id())
-			.filter(user -> user.getStatus() == UserStatus.ACTIVE)
-			.orElseThrow(InvalidAuthenticatedUserException::new);
 	}
 
 	private String generateUniqueInviteCode() {

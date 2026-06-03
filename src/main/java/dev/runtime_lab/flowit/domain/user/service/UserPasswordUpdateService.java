@@ -2,11 +2,9 @@ package dev.runtime_lab.flowit.domain.user.service;
 
 import dev.runtime_lab.flowit.domain.user.dto.UserPasswordUpdateRequest;
 import dev.runtime_lab.flowit.domain.user.entity.User;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.exception.InvalidCurrentPasswordException;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
-import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import dev.runtime_lab.flowit.global.security.password.PasswordPolicy;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserPasswordUpdateService {
 
-	private final UserRepository userRepository;
+	private final CurrentUserProvider currentUserProvider;
 	private final PasswordEncoder passwordEncoder;
 	private final PasswordPolicy passwordPolicy;
 	private final Clock clock;
@@ -28,9 +26,7 @@ public class UserPasswordUpdateService {
 	public void update(CurrentUser currentUser, UserPasswordUpdateRequest request) {
 		passwordPolicy.validate(request.newPassword());
 
-		User user = userRepository.findActiveByIdForUpdate(currentUser.id())
-			.filter(foundUser -> foundUser.getStatus() == UserStatus.ACTIVE)
-			.orElseThrow(InvalidAuthenticatedUserException::new);
+		User user = currentUserProvider.findActiveForUpdate(currentUser);
 
 		if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
 			throw new InvalidCurrentPasswordException();

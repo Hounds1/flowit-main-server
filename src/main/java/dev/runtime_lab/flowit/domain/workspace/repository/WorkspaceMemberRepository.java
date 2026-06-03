@@ -60,6 +60,21 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 		);
 	}
 
+	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndMemberIdForUpdate(Long workspaceId, Long memberId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+
+		return Optional.ofNullable(
+			queryFactory.selectFrom(workspaceMember)
+				.where(
+					workspaceMember.workspace.id.eq(workspaceId),
+					workspaceMember.id.eq(memberId),
+					workspaceMember.deletedAt.isNull()
+				)
+				.setLockMode(LockModeType.PESSIMISTIC_WRITE)
+				.fetchOne()
+		);
+	}
+
 	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndUserId(Long workspaceId, Long userId) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
 
@@ -98,6 +113,21 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 			)
 			.orderBy(roleOrder.asc(), user.name.asc(), user.id.asc())
 			.fetch();
+	}
+
+	public long countActiveOwnersByWorkspaceId(Long workspaceId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+
+		Long count = queryFactory.select(workspaceMember.id.count())
+			.from(workspaceMember)
+			.where(
+				workspaceMember.workspace.id.eq(workspaceId),
+				workspaceMember.role.eq(WorkspaceMemberRole.OWNER),
+				workspaceMember.deletedAt.isNull()
+			)
+			.fetchOne();
+
+		return count == null ? 0L : count;
 	}
 
 	public long softDeleteActiveByWorkspaceId(Long workspaceId, Long deletedAt) {

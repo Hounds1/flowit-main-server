@@ -77,4 +77,13 @@ public class WorkspaceMember {
 		this.deletedAt = deletedAt;
 		this.updatedAt = deletedAt;
 	}
+
+	public void updateRole(WorkspaceMemberRole role, Long updatedAt) {
+		if (this.role == role) {
+			return;
+		}
+
+		this.role = role;
+		this.updatedAt = updatedAt;
+	}
 }

@@ -1,15 +1,19 @@
 package dev.runtime_lab.flowit.domain.workspace.controller;
 
+import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMembersResponse;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceMemberService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUser;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.response.ApiEmptyData;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -27,13 +31,25 @@ public class WorkspaceMemberController {
 		return workspaceMemberService.members(currentUser, workspaceId);
 	}
 
-	@DeleteMapping("/{userId}")
+	@PatchMapping("/{memberId}/role")
+	public ApiEmptyData updateRole(
+		@AuthenticatedUser CurrentUser currentUser,
+		@PathVariable Long workspaceId,
+		@PathVariable Long memberId,
+		@Valid @RequestBody WorkspaceMemberRoleUpdateRequest request
+	) {
+		workspaceMemberService.updateRole(currentUser, workspaceId, memberId, request);
+
+		return ApiEmptyData.empty();
+	}
+
+	@DeleteMapping("/{memberId}")
 	public ApiEmptyData remove(
 		@AuthenticatedUser CurrentUser currentUser,
 		@PathVariable Long workspaceId,
-		@PathVariable Long userId
+		@PathVariable Long memberId
 	) {
-		workspaceMemberService.remove(currentUser, workspaceId, userId);
+		workspaceMemberService.remove(currentUser, workspaceId, memberId);
 
 		return ApiEmptyData.empty();
 	}

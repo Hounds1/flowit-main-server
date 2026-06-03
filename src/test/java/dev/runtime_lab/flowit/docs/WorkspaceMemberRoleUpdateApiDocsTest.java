@@ -1,8 +1,10 @@
 package dev.runtime_lab.flowit.docs;
 
 import dev.runtime_lab.flowit.domain.workspace.controller.WorkspaceMemberController;
+import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceMemberService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
+import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.exception.GlobalExceptionHandler;
 import dev.runtime_lab.flowit.global.web.response.ApiResponseBodyAdvice;
 import java.time.Instant;
@@ -23,24 +25,28 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(RestDocumentationExtension.class)
-class WorkspaceMemberRemoveApiDocsTest {
+class WorkspaceMemberRoleUpdateApiDocsTest {
 
 	private final WorkspaceMemberService workspaceMemberService = mock(WorkspaceMemberService.class);
 	private MockMvc mockMvc;
@@ -65,25 +71,37 @@ class WorkspaceMemberRemoveApiDocsTest {
 	}
 
 	@Test
-	void removeWorkspaceMember() throws Exception {
+	void updateWorkspaceMemberRole() throws Exception {
+		String requestBody = """
+			{
+			  "role": "ADMIN"
+			}
+			""";
+
 		SecurityContextHolder.getContext().setAuthentication(
-			new JwtAuthenticationToken(jwt("1003", "user@example.com", "nickname"), List.of())
+			new JwtAuthenticationToken(jwt("1003", "owner@example.com", "Owner"), List.of())
 		);
 
-		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/{memberId}", 2001L, 3005L)
+		mockMvc.perform(patch("/v1/workspaces/{workspaceId}/members/{memberId}/role", 2001L, 3005L)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
-				.accept(MediaType.APPLICATION_JSON))
+				.contentType(MediaType.APPLICATION_JSON)
+				.accept(MediaType.APPLICATION_JSON)
+				.content(requestBody))
 			.andExpect(status().isOk())
-			.andDo(document("workspaces-member-remove",
+			.andDo(document("workspaces-member-role-update",
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("workspaceId").description("멤버를 강제 퇴장시킬 워크스페이스 식별자입니다."),
-					parameterWithName("memberId").description("강제 퇴장 대상 워크스페이스 멤버 식별자입니다.")
+					parameterWithName("workspaceId").description("멤버 역할을 변경할 워크스페이스 식별자입니다."),
+					parameterWithName("memberId").description("역할을 변경할 대상 워크스페이스 멤버 식별자입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. `Bearer {token}` 형식으로 전달합니다."),
+					headerWithName(HttpHeaders.CONTENT_TYPE).description("요청 본문 미디어 타입입니다. `application/json`을 사용합니다."),
 					headerWithName(HttpHeaders.ACCEPT).description("클라이언트가 기대하는 응답 미디어 타입입니다.").optional()
+				),
+				requestFields(
+					fieldWithPath("role").type(JsonFieldType.STRING).description("변경할 워크스페이스 멤버 역할입니다. link:enum-reference.html#workspace-member-role[WorkspaceMemberRole]을 참고합니다.")
 				),
 				responseHeaders(
 					headerWithName(HttpHeaders.CONTENT_TYPE).description("응답 본문 미디어 타입입니다.")
@@ -94,6 +112,13 @@ class WorkspaceMemberRemoveApiDocsTest {
 					fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 				)
 			));
+
+		verify(workspaceMemberService).updateRole(
+			any(CurrentUser.class),
+			eq(2001L),
+			eq(3005L),
+			any(WorkspaceMemberRoleUpdateRequest.class)
+		);
 	}
 
 	private Jwt jwt(String subject, String email, String name) {

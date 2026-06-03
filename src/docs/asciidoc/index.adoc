@@ -139,8 +139,12 @@ a|`PUT /v1/users/me/profile-image` +
 |`GET /v1/workspaces/{workspaceId}/members`
 |워크스페이스 활성 멤버 목록, 역할 정렬, 초대 코드 응답을 설명합니다.
 
+|link:workspaces-member-role-update.html[워크스페이스 멤버 역할 변경 API]
+|`PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+|워크스페이스 OWNER 또는 ADMIN이 대상 멤버의 역할을 변경하는 요청/응답, ADMIN의 OWNER 부여 제한, OWNER 최소 인원 제한을 설명합니다.
+
 |link:workspaces-member-remove.html[워크스페이스 멤버 강제 퇴장 API]
-|`DELETE /v1/workspaces/{workspaceId}/members/{userId}`
+|`DELETE /v1/workspaces/{workspaceId}/members/{memberId}`
 |워크스페이스 OWNER 또는 ADMIN이 대상 멤버를 강제 퇴장시키는 요청/응답과 권한 제한을 설명합니다.
 |===
 
