@@ -1,5 +1,4 @@
 [.update-note-title]
 Integration Note
 
-Added:: ``DELETE /v1/workspaces/{workspaceId}/members/withdraw`` 워크스페이스 멤버 탈퇴 API가 추가되었습니다.
-Additional:: ``OWNER``가 탈퇴 요청 시 가장 오래된 ``ADMIN``이 권한을 승계합니다. ``ADMIN``이 존재하지 않을 시 ``OWNER``의 탈퇴는 거부됩니다.
+Empty:: API 변경이 없습니다.

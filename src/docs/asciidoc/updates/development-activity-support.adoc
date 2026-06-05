@@ -7,4 +7,4 @@ Development Activity Support
 Version Stage:: {api-version-stage} (pass:[<a href="version-policy.html">Version Policy</a>])
 API Status:: {api-version-stage-status}
 
-Docs:: 문서 전반적으로 ``배지`` 형태를 잘못 출력하는 현상을 개선했습니다.
+Infra:: 사용자 프로필 이미지의 볼륨 마운트 누락을 수정했습니다.

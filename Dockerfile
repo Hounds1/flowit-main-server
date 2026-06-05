@@ -20,7 +20,9 @@ WORKDIR /app
 
 ENV TZ=Asia/Seoul
 
-RUN useradd --system --uid 10001 --create-home --home-dir /app flowit
+RUN useradd --system --uid 10001 --create-home --home-dir /app flowit \
+	&& mkdir -p /app/flowit/main-server/profile-images \
+	&& chown -R flowit:flowit /app/flowit
 
 COPY --from=builder --chown=flowit:flowit /workspace/flowit.jar /app/flowit.jar
 
