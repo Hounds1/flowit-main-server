@@ -1,12 +1,12 @@
 package dev.runtime_lab.flowit.docs;
 
-import dev.runtime_lab.flowit.domain.workspace.controller.WorkspaceController;
-import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceResponse;
-import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceService;
+import dev.runtime_lab.flowit.domain.workspace.controller.WorkspaceMemberController;
+import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceMemberService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
-import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.exception.GlobalExceptionHandler;
 import dev.runtime_lab.flowit.global.web.response.ApiResponseBodyAdvice;
+import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,19 +23,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import java.time.Instant;
-import java.util.List;
-
-import static dev.runtime_lab.flowit.docs.support.ResponseFieldStability.experimental;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.springframework.restdocs.headers.HeaderDocumentation.*;
+import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
-import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessResponse;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -43,9 +40,9 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(RestDocumentationExtension.class)
-class WorkspaceGetApiDocsTest {
+class WorkspaceMemberWithdrawApiDocsTest {
 
-	private final WorkspaceService workspaceService = mock(WorkspaceService.class);
+	private final WorkspaceMemberService workspaceMemberService = mock(WorkspaceMemberService.class);
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -54,7 +51,7 @@ class WorkspaceGetApiDocsTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new WorkspaceController(workspaceService))
+			.standaloneSetup(new WorkspaceMemberController(workspaceMemberService))
 			.setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)
@@ -68,30 +65,20 @@ class WorkspaceGetApiDocsTest {
 	}
 
 	@Test
-	void getWorkspace() throws Exception {
-		WorkspaceResponse response = new WorkspaceResponse(
-			2001L,
-			"Flowit Team",
-			"Product planning workspace",
-			"A1B2-C3D4-E5F6",
-			1779889000L,
-			1779889100L
-		);
-
-		when(workspaceService.get(any(CurrentUser.class), eq(2001L))).thenReturn(response);
+	void withdrawWorkspaceMember() throws Exception {
 		SecurityContextHolder.getContext().setAuthentication(
 			new JwtAuthenticationToken(jwt("1003", "user@example.com", "nickname"), List.of())
 		);
 
-		mockMvc.perform(get("/v1/workspaces/{workspaceId}", 2001L)
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/withdraw", 2001L)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
 				.accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
-			.andDo(document("workspaces-get",
+			.andDo(document("workspaces-member-withdraw",
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("workspaceId").description("조회할 워크스페이스 식별자입니다.")
+					parameterWithName("workspaceId").description("탈퇴할 워크스페이스 식별자입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. ``Bearer {token}`` 형식으로 전달합니다."),
@@ -102,13 +89,7 @@ class WorkspaceGetApiDocsTest {
 				),
 				responseFields(
 					fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 처리 성공 여부입니다."),
-					fieldWithPath("data").type(JsonFieldType.OBJECT).description("워크스페이스 조회 응답 데이터입니다."),
-					fieldWithPath("data.id").type(JsonFieldType.NUMBER).description("워크스페이스 식별자입니다."),
-					fieldWithPath("data.name").type(JsonFieldType.STRING).description("워크스페이스 이름입니다."),
-					fieldWithPath("data.description").type(JsonFieldType.STRING).description("워크스페이스 설명입니다.").optional(),
-					fieldWithPath("data.inviteCode").type(JsonFieldType.STRING).description("워크스페이스 초대 코드입니다.").attributes(experimental()),
-					fieldWithPath("data.createdAt").type(JsonFieldType.NUMBER).description("워크스페이스 생성 시각입니다. Unix epoch seconds 기준입니다.").attributes(experimental()),
-					fieldWithPath("data.updatedAt").type(JsonFieldType.NUMBER).description("워크스페이스 수정 시각입니다. Unix epoch seconds 기준입니다.").attributes(experimental()),
+					fieldWithPath("data").type(JsonFieldType.OBJECT).description("비어 있는 성공 응답입니다."),
 					fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 				)
 			));

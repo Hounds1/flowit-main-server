@@ -131,6 +131,36 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 		return count == null ? 0L : count;
 	}
 
+	public Optional<Long> findOldestActiveAdminMemberIdByWorkspaceId(Long workspaceId) {
+		List<Long> memberIds = entityManager().createQuery("""
+				select workspaceMember.id
+				from WorkspaceMember workspaceMember
+				left join WorkspaceMemberRoleHistory roleHistory
+					on roleHistory.workspaceMember = workspaceMember
+					and roleHistory.toRole = :adminRole
+				where workspaceMember.workspace.id = :workspaceId
+					and workspaceMember.role = :adminRole
+					and workspaceMember.deletedAt is null
+				group by workspaceMember.id, workspaceMember.updatedAt
+				order by coalesce(max(roleHistory.changedAt), workspaceMember.updatedAt) asc,
+					workspaceMember.id asc
+				""", Long.class)
+			.setParameter("workspaceId", workspaceId)
+			.setParameter("adminRole", WorkspaceMemberRole.ADMIN)
+			.setMaxResults(1)
+			.getResultList();
+
+		if (memberIds.isEmpty()) {
+			return Optional.empty();
+		}
+
+		return Optional.of(memberIds.get(0));
+	}
+
+	public void flush() {
+		entityManager().flush();
+	}
+
 	public long softDeleteActiveByWorkspaceId(Long workspaceId, Long deletedAt) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
 

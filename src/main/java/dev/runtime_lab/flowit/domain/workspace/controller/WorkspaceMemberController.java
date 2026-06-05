@@ -53,4 +53,14 @@ public class WorkspaceMemberController {
 
 		return ApiEmptyData.empty();
 	}
+
+	@DeleteMapping("/withdraw")
+	public ApiEmptyData withdraw(
+		@AuthenticatedUser CurrentUser currentUser,
+		@PathVariable Long workspaceId
+	) {
+		workspaceMemberService.withdraw(currentUser, workspaceId);
+
+		return ApiEmptyData.empty();
+	}
 }

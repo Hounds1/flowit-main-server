@@ -17,6 +17,7 @@ import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -203,6 +204,36 @@ class WorkspaceMemberRepositoryTest {
 		verify(query).from(QWorkspaceMember.workspaceMember);
 		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
 		verify(query).fetchOne();
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void findOldestActiveAdminMemberIdByWorkspaceIdReturnsFirstCandidateId() {
+		TypedQuery<Long> query = mock(TypedQuery.class);
+
+		when(entityManager.createQuery(any(String.class), org.mockito.ArgumentMatchers.eq(Long.class)))
+			.thenReturn(query);
+		when(query.setParameter("workspaceId", 10L)).thenReturn(query);
+		when(query.setParameter("adminRole", WorkspaceMemberRole.ADMIN)).thenReturn(query);
+		when(query.setMaxResults(1)).thenReturn(query);
+		when(query.getResultList()).thenReturn(List.of(200L));
+
+		var found = repository.findOldestActiveAdminMemberIdByWorkspaceId(10L);
+
+		assertTrue(found.isPresent());
+		assertEquals(200L, found.get());
+		verify(entityManager).createQuery(any(String.class), org.mockito.ArgumentMatchers.eq(Long.class));
+		verify(query).setParameter("workspaceId", 10L);
+		verify(query).setParameter("adminRole", WorkspaceMemberRole.ADMIN);
+		verify(query).setMaxResults(1);
+		verify(query).getResultList();
+	}
+
+	@Test
+	void flushFlushesEntityManager() {
+		repository.flush();
+
+		verify(entityManager).flush();
 	}
 
 	@Test
