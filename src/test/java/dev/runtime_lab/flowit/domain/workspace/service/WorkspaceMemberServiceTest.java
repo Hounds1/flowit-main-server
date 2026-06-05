@@ -8,11 +8,17 @@ import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMembersResponse;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
+import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRemovalHistory;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
+import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRoleHistory;
+import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberWithdrawalHistory;
 import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceMemberAccessDeniedException;
 import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceMemberNotFoundException;
 import dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceNotFoundException;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
+import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRemovalHistoryRepository;
+import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRoleHistoryRepository;
+import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberWithdrawalHistoryRepository;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceRepository;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
@@ -22,10 +28,12 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,11 +44,20 @@ class WorkspaceMemberServiceTest {
 	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
 	private final WorkspaceRepository workspaceRepository = mock(WorkspaceRepository.class);
 	private final WorkspaceMemberRepository workspaceMemberRepository = mock(WorkspaceMemberRepository.class);
+	private final WorkspaceMemberRoleHistoryRepository workspaceMemberRoleHistoryRepository =
+		mock(WorkspaceMemberRoleHistoryRepository.class);
+	private final WorkspaceMemberRemovalHistoryRepository workspaceMemberRemovalHistoryRepository =
+		mock(WorkspaceMemberRemovalHistoryRepository.class);
+	private final WorkspaceMemberWithdrawalHistoryRepository workspaceMemberWithdrawalHistoryRepository =
+		mock(WorkspaceMemberWithdrawalHistoryRepository.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1779889000L), ZoneOffset.UTC);
 	private final WorkspaceMemberService workspaceMemberService = new WorkspaceMemberService(
 		currentUserProvider,
 		workspaceRepository,
 		workspaceMemberRepository,
+		workspaceMemberRoleHistoryRepository,
+		workspaceMemberRemovalHistoryRepository,
+		workspaceMemberWithdrawalHistoryRepository,
 		clock
 	);
 
@@ -136,6 +153,8 @@ class WorkspaceMemberServiceTest {
 		Workspace workspace = workspace(owner);
 		WorkspaceMember ownerMembership = workspaceMember(100L, workspace, owner, WorkspaceMemberRole.OWNER);
 		WorkspaceMember targetMembership = workspaceMember(200L, workspace, activeUser(2L), WorkspaceMemberRole.MEMBER);
+		ArgumentCaptor<WorkspaceMemberRoleHistory> historyCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberRoleHistory.class);
 
 		when(currentUserProvider.findActive(currentUser)).thenReturn(owner);
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
@@ -154,6 +173,14 @@ class WorkspaceMemberServiceTest {
 		assertEquals(WorkspaceMemberRole.ADMIN, targetMembership.getRole());
 		assertEquals(1779889000L, targetMembership.getUpdatedAt());
 		verify(workspaceMemberRepository, never()).countActiveOwnersByWorkspaceId(10L);
+		verify(workspaceMemberRoleHistoryRepository).save(historyCaptor.capture());
+		WorkspaceMemberRoleHistory history = historyCaptor.getValue();
+		assertEquals(workspace, history.getWorkspace());
+		assertEquals(targetMembership, history.getWorkspaceMember());
+		assertEquals(WorkspaceMemberRole.MEMBER, history.getFromRole());
+		assertEquals(WorkspaceMemberRole.ADMIN, history.getToRole());
+		assertEquals(owner, history.getChangedBy());
+		assertEquals(1779889000L, history.getChangedAt());
 	}
 
 	@Test
@@ -288,7 +315,10 @@ class WorkspaceMemberServiceTest {
 		User owner = activeUser(1L);
 		Workspace workspace = workspace(owner);
 		WorkspaceMember ownerMembership = workspaceMember(100L, workspace, owner, WorkspaceMemberRole.OWNER);
-		WorkspaceMember targetMembership = workspaceMember(200L, workspace, activeUser(2L), WorkspaceMemberRole.ADMIN);
+		User targetUser = activeUser(2L);
+		WorkspaceMember targetMembership = workspaceMember(200L, workspace, targetUser, WorkspaceMemberRole.ADMIN);
+		ArgumentCaptor<WorkspaceMemberRemovalHistory> historyCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberRemovalHistory.class);
 
 		when(currentUserProvider.findActive(currentUser)).thenReturn(owner);
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
@@ -301,6 +331,14 @@ class WorkspaceMemberServiceTest {
 
 		assertEquals(1779889000L, targetMembership.getDeletedAt());
 		assertEquals(1779889000L, targetMembership.getUpdatedAt());
+		verify(workspaceMemberRemovalHistoryRepository).save(historyCaptor.capture());
+		WorkspaceMemberRemovalHistory history = historyCaptor.getValue();
+		assertEquals(workspace, history.getWorkspace());
+		assertEquals(targetMembership, history.getWorkspaceMember());
+		assertEquals(targetUser, history.getTargetUser());
+		assertEquals(WorkspaceMemberRole.ADMIN, history.getRoleSnapshot());
+		assertEquals(owner, history.getRemovedBy());
+		assertEquals(1779889000L, history.getRemovedAt());
 	}
 
 	@Test
@@ -462,6 +500,137 @@ class WorkspaceMemberServiceTest {
 
 		assertThrows(InvalidAuthenticatedUserException.class,
 			() -> workspaceMemberService.remove(currentUser, 10L, 200L));
+	}
+
+	@Test
+	void withdrawAllowsMemberToWithdraw() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User member = activeUser(1L);
+		Workspace workspace = workspace(activeUser(2L));
+		WorkspaceMember memberMembership = workspaceMember(100L, workspace, member, WorkspaceMemberRole.MEMBER);
+		ArgumentCaptor<WorkspaceMemberWithdrawalHistory> historyCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberWithdrawalHistory.class);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(member);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
+			.thenReturn(Optional.of(memberMembership));
+
+		workspaceMemberService.withdraw(currentUser, 10L);
+
+		assertEquals(1779889000L, memberMembership.getDeletedAt());
+		assertEquals(1779889000L, memberMembership.getUpdatedAt());
+		verify(workspaceMemberRepository, never()).findOldestActiveAdminMemberIdByWorkspaceId(10L);
+		verify(workspaceMemberWithdrawalHistoryRepository).save(historyCaptor.capture());
+		WorkspaceMemberWithdrawalHistory history = historyCaptor.getValue();
+		assertEquals(workspace, history.getWorkspace());
+		assertEquals(memberMembership, history.getWorkspaceMember());
+		assertEquals(member, history.getUser());
+		assertEquals(WorkspaceMemberRole.MEMBER, history.getRoleSnapshot());
+		assertNull(history.getOwnershipTransferredToWorkspaceMember());
+		assertNull(history.getOwnershipTransferredToUser());
+		assertEquals(1779889000L, history.getWithdrawnAt());
+	}
+
+	@Test
+	void withdrawAllowsOwnerToWithdrawAndPromotesOldestAdmin() {
+		CurrentUser currentUser = new CurrentUser(1L, "owner@example.com", "owner");
+		User owner = activeUser(1L);
+		User admin = activeUser(2L);
+		Workspace workspace = workspace(owner);
+		WorkspaceMember ownerMembership = workspaceMember(100L, workspace, owner, WorkspaceMemberRole.OWNER);
+		WorkspaceMember adminMembership = workspaceMember(200L, workspace, admin, WorkspaceMemberRole.ADMIN);
+		ArgumentCaptor<WorkspaceMemberRoleHistory> roleHistoryCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberRoleHistory.class);
+		ArgumentCaptor<WorkspaceMemberWithdrawalHistory> withdrawalHistoryCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberWithdrawalHistory.class);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(owner);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
+			.thenReturn(Optional.of(ownerMembership));
+		when(workspaceMemberRepository.findOldestActiveAdminMemberIdByWorkspaceId(10L))
+			.thenReturn(Optional.of(200L));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberIdForUpdate(10L, 200L))
+			.thenReturn(Optional.of(adminMembership));
+
+		workspaceMemberService.withdraw(currentUser, 10L);
+
+		assertEquals(1779889000L, ownerMembership.getDeletedAt());
+		assertEquals(1779889000L, ownerMembership.getUpdatedAt());
+		assertEquals(WorkspaceMemberRole.OWNER, adminMembership.getRole());
+		assertEquals(1779889000L, adminMembership.getUpdatedAt());
+		verify(workspaceMemberRepository).flush();
+
+		verify(workspaceMemberRoleHistoryRepository).save(roleHistoryCaptor.capture());
+		WorkspaceMemberRoleHistory roleHistory = roleHistoryCaptor.getValue();
+		assertEquals(workspace, roleHistory.getWorkspace());
+		assertEquals(adminMembership, roleHistory.getWorkspaceMember());
+		assertEquals(WorkspaceMemberRole.ADMIN, roleHistory.getFromRole());
+		assertEquals(WorkspaceMemberRole.OWNER, roleHistory.getToRole());
+		assertEquals(owner, roleHistory.getChangedBy());
+		assertEquals(1779889000L, roleHistory.getChangedAt());
+
+		verify(workspaceMemberWithdrawalHistoryRepository).save(withdrawalHistoryCaptor.capture());
+		WorkspaceMemberWithdrawalHistory withdrawalHistory = withdrawalHistoryCaptor.getValue();
+		assertEquals(workspace, withdrawalHistory.getWorkspace());
+		assertEquals(ownerMembership, withdrawalHistory.getWorkspaceMember());
+		assertEquals(owner, withdrawalHistory.getUser());
+		assertEquals(WorkspaceMemberRole.OWNER, withdrawalHistory.getRoleSnapshot());
+		assertEquals(adminMembership, withdrawalHistory.getOwnershipTransferredToWorkspaceMember());
+		assertEquals(admin, withdrawalHistory.getOwnershipTransferredToUser());
+		assertEquals(1779889000L, withdrawalHistory.getWithdrawnAt());
+	}
+
+	@Test
+	void withdrawRejectsOwnerWhenAdminIsMissing() {
+		CurrentUser currentUser = new CurrentUser(1L, "owner@example.com", "owner");
+		User owner = activeUser(1L);
+		Workspace workspace = workspace(owner);
+		WorkspaceMember ownerMembership = workspaceMember(100L, workspace, owner, WorkspaceMemberRole.OWNER);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(owner);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
+			.thenReturn(Optional.of(ownerMembership));
+		when(workspaceMemberRepository.findOldestActiveAdminMemberIdByWorkspaceId(10L))
+			.thenReturn(Optional.empty());
+
+		assertThrows(WorkspaceMemberAccessDeniedException.class,
+			() -> workspaceMemberService.withdraw(currentUser, 10L));
+		assertNull(ownerMembership.getDeletedAt());
+		verify(workspaceMemberWithdrawalHistoryRepository, never())
+			.save(any(WorkspaceMemberWithdrawalHistory.class));
+	}
+
+	@Test
+	void withdrawRejectsMissingRequesterMembership() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User member = activeUser(1L);
+		Workspace workspace = workspace(activeUser(2L));
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(member);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
+			.thenReturn(Optional.empty());
+
+		assertThrows(WorkspaceMemberAccessDeniedException.class,
+			() -> workspaceMemberService.withdraw(currentUser, 10L));
+		verify(workspaceMemberWithdrawalHistoryRepository, never())
+			.save(any(WorkspaceMemberWithdrawalHistory.class));
+	}
+
+	@Test
+	void withdrawRejectsMissingWorkspace() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User member = activeUser(1L);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(member);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.empty());
+
+		assertThrows(WorkspaceNotFoundException.class,
+			() -> workspaceMemberService.withdraw(currentUser, 10L));
+		verify(workspaceMemberRepository, never()).findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L);
 	}
 
 	private User activeUser(Long id) {

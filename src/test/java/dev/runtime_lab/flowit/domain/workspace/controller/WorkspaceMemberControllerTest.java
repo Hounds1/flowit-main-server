@@ -316,6 +316,79 @@ class WorkspaceMemberControllerTest {
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
+	@Test
+	void withdrawWithdrawsCurrentWorkspaceMember() throws Exception {
+		ArgumentCaptor<CurrentUser> currentUserCaptor = ArgumentCaptor.forClass(CurrentUser.class);
+		ArgumentCaptor<Long> workspaceIdCaptor = ArgumentCaptor.forClass(Long.class);
+
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/withdraw", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data").isMap())
+			.andExpect(jsonPath("$.extensions").isMap());
+
+		verify(workspaceMemberService).withdraw(
+			currentUserCaptor.capture(),
+			workspaceIdCaptor.capture()
+		);
+		assertEquals(1L, currentUserCaptor.getValue().id());
+		assertEquals("user@example.com", currentUserCaptor.getValue().email());
+		assertEquals("nickname", currentUserCaptor.getValue().name());
+		assertEquals(10L, workspaceIdCaptor.getValue());
+	}
+
+	@Test
+	void withdrawReturnsUnauthorizedWhenAuthenticationIsMissing() throws Exception {
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/withdraw", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_401_001"))
+			.andExpect(jsonPath("$.error.message").value("Invalid authenticated user."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void withdrawReturnsForbiddenWhenWithdrawalIsNotAllowed() throws Exception {
+		doThrow(new WorkspaceMemberAccessDeniedException("Workspace must have at least one owner."))
+			.when(workspaceMemberService)
+			.withdraw(any(CurrentUser.class), eq(10L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/withdraw", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_403_001"))
+			.andExpect(jsonPath("$.error.message").value("Workspace must have at least one owner."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void withdrawReturnsNotFoundWhenWorkspaceIsMissing() throws Exception {
+		doThrow(new WorkspaceNotFoundException())
+			.when(workspaceMemberService)
+			.withdraw(any(CurrentUser.class), eq(10L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(delete("/v1/workspaces/{workspaceId}/members/withdraw", 10L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("WORKSPACE_404_001"))
+			.andExpect(jsonPath("$.error.message").value("Workspace not found."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
 	private Jwt jwt(String subject, String email, String name) {
 		return Jwt.withTokenValue("token")
 			.header("alg", "none")
