@@ -8,7 +8,7 @@
 :stylesdir: css
 :linkcss:
 :nav-workspaces-member-withdraw:
-:breadcrumb-section: 워크스페이스 API
+:breadcrumb-section: 워크스페이스 멤버 API
 :breadcrumb-current: 워크스페이스 멤버 탈퇴 API
 
 include::_navigation.adoc[]

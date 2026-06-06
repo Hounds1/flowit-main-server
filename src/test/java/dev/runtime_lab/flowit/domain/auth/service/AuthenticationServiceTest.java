@@ -8,7 +8,7 @@ import dev.runtime_lab.flowit.domain.auth.exception.InvalidLoginCredentialsExcep
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidRefreshTokenException;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.UserAuthenticationService;
 import dev.runtime_lab.flowit.global.security.jwt.FlowitJwtClaims;
 import dev.runtime_lab.flowit.global.security.jwt.JwtTokenService;
 import dev.runtime_lab.flowit.global.security.jwt.RefreshTokenService;
@@ -35,13 +35,13 @@ import static org.mockito.Mockito.when;
 
 class AuthenticationServiceTest {
 
-	private final UserRepository userRepository = mock(UserRepository.class);
+	private final UserAuthenticationService userAuthenticationService = mock(UserAuthenticationService.class);
 	private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
 	private final JwtTokenService jwtTokenService = mock(JwtTokenService.class);
 	private final RefreshTokenService refreshTokenService = mock(RefreshTokenService.class);
 	private final PasswordPolicy passwordPolicy = new PasswordPolicy();
 	private final AuthenticationService authenticationService = new AuthenticationService(
-		userRepository,
+		userAuthenticationService,
 		passwordEncoder,
 		jwtTokenService,
 		refreshTokenService,
@@ -63,7 +63,7 @@ class AuthenticationServiceTest {
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<Map<String, Object>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
 
-		when(userRepository.findActiveByEmail("user@example.com")).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveByEmail("user@example.com")).thenReturn(Optional.of(user));
 		when(passwordEncoder.matches("plainPassword", "encodedPassword")).thenReturn(true);
 		when(jwtTokenService.issueAccessToken(eq("1001"), anyMap()))
 			.thenReturn(JwtAccessToken.bearer("jwt-token", 900L));
@@ -88,7 +88,7 @@ class AuthenticationServiceTest {
 	void loginRejectsMissingUser() {
 		LoginRequest request = new LoginRequest("user@example.com", "plainPassword");
 
-		when(userRepository.findActiveByEmail("user@example.com")).thenReturn(Optional.empty());
+		when(userAuthenticationService.findActiveByEmail("user@example.com")).thenReturn(Optional.empty());
 
 		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(request));
 		verify(passwordEncoder, never()).matches("plainPassword", "encodedPassword");
@@ -99,17 +99,7 @@ class AuthenticationServiceTest {
 	@Test
 	void loginRejectsInactiveUser() {
 		LoginRequest request = new LoginRequest("user@example.com", "plainPassword");
-		User user = User.builder()
-			.id(1001L)
-			.email("user@example.com")
-			.passwordHash("encodedPassword")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1779888000L)
-			.updatedAt(1779888000L)
-			.build();
-
-		when(userRepository.findActiveByEmail("user@example.com")).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveByEmail("user@example.com")).thenReturn(Optional.empty());
 
 		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(request));
 		verify(passwordEncoder, never()).matches("plainPassword", "encodedPassword");
@@ -130,7 +120,7 @@ class AuthenticationServiceTest {
 			.updatedAt(1779888000L)
 			.build();
 
-		when(userRepository.findActiveByEmail("user@example.com")).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveByEmail("user@example.com")).thenReturn(Optional.of(user));
 		when(passwordEncoder.matches("plainPassword", "encodedPassword")).thenReturn(false);
 
 		assertThrows(InvalidLoginCredentialsException.class, () -> authenticationService.login(request));
@@ -143,7 +133,7 @@ class AuthenticationServiceTest {
 		LoginRequest request = new LoginRequest("user@example.com", "plainPassword!");
 
 		assertThrows(InvalidPasswordPolicyException.class, () -> authenticationService.login(request));
-		verify(userRepository, never()).findActiveByEmail(anyString());
+		verify(userAuthenticationService, never()).findActiveByEmail(anyString());
 		verify(passwordEncoder, never()).matches(anyString(), anyString());
 		verify(jwtTokenService, never()).issueAccessToken(eq("1001"), anyMap());
 		verify(refreshTokenService, never()).issue("1001", 0L);
@@ -166,7 +156,7 @@ class AuthenticationServiceTest {
 		ArgumentCaptor<Map<String, Object>> claimsCaptor = ArgumentCaptor.forClass(Map.class);
 
 		when(refreshTokenService.consume("old-refresh-token")).thenReturn(Optional.of(new RefreshTokenPayload("1001", 7L)));
-		when(userRepository.findById(1001L)).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveById(1001L)).thenReturn(Optional.of(user));
 		when(jwtTokenService.issueAccessToken(eq("1001"), anyMap()))
 			.thenReturn(JwtAccessToken.bearer("new-access-token", 900L));
 		when(refreshTokenService.issue("1001", 7L))
@@ -194,7 +184,7 @@ class AuthenticationServiceTest {
 		when(refreshTokenService.consume("missing-refresh-token")).thenReturn(Optional.empty());
 
 		assertThrows(InvalidRefreshTokenException.class, () -> authenticationService.refresh(request));
-		verify(userRepository, never()).findById(1001L);
+		verify(userAuthenticationService, never()).findActiveById(1001L);
 		verify(jwtTokenService, never()).issueAccessToken(eq("1001"), anyMap());
 		verify(refreshTokenService, never()).issue("1001", 7L);
 	}
@@ -202,18 +192,8 @@ class AuthenticationServiceTest {
 	@Test
 	void refreshRejectsInactiveUser() {
 		TokenRefreshRequest request = new TokenRefreshRequest("old-refresh-token");
-		User user = User.builder()
-			.id(1001L)
-			.email("user@example.com")
-			.passwordHash("encodedPassword")
-			.name("nickname")
-			.status(UserStatus.LOCKED)
-			.createdAt(1779888000L)
-			.updatedAt(1779888000L)
-			.build();
-
 		when(refreshTokenService.consume("old-refresh-token")).thenReturn(Optional.of(new RefreshTokenPayload("1001", 0L)));
-		when(userRepository.findById(1001L)).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveById(1001L)).thenReturn(Optional.empty());
 
 		assertThrows(InvalidRefreshTokenException.class, () -> authenticationService.refresh(request));
 		verify(jwtTokenService, never()).issueAccessToken(eq("1001"), anyMap());
@@ -235,7 +215,7 @@ class AuthenticationServiceTest {
 			.build();
 
 		when(refreshTokenService.consume("old-refresh-token")).thenReturn(Optional.of(new RefreshTokenPayload("1001", 7L)));
-		when(userRepository.findById(1001L)).thenReturn(Optional.of(user));
+		when(userAuthenticationService.findActiveById(1001L)).thenReturn(Optional.of(user));
 
 		assertThrows(InvalidRefreshTokenException.class, () -> authenticationService.refresh(request));
 		verify(jwtTokenService, never()).issueAccessToken(eq("1001"), anyMap());

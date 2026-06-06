@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityRecorder;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
@@ -28,12 +29,13 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
+import static dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessMessages.MEMBERSHIP_REQUIRED;
+import static dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessMessages.OWNER_REQUIRED;
+import static dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessMessages.ROLE_UPDATE_NOT_ALLOWED;
+
 @Service
 @RequiredArgsConstructor
 public class WorkspaceMemberService {
-
-	private static final String ROLE_UPDATE_NOT_ALLOWED_MESSAGE = "Workspace member role update is not allowed.";
-	private static final String OWNER_REQUIRED_MESSAGE = "Workspace must have at least one owner.";
 
 	private final CurrentUserProvider currentUserProvider;
 	private final WorkspaceRepository workspaceRepository;
@@ -41,6 +43,7 @@ public class WorkspaceMemberService {
 	private final WorkspaceMemberRoleHistoryRepository workspaceMemberRoleHistoryRepository;
 	private final WorkspaceMemberRemovalHistoryRepository workspaceMemberRemovalHistoryRepository;
 	private final WorkspaceMemberWithdrawalHistoryRepository workspaceMemberWithdrawalHistoryRepository;
+	private final WorkspaceActivityRecorder workspaceActivityRecorder;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
@@ -50,7 +53,7 @@ public class WorkspaceMemberService {
 			.orElseThrow(WorkspaceNotFoundException::new);
 
 		workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(workspace.getId(), requester.getId())
-			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException("Workspace membership is required."));
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(MEMBERSHIP_REQUIRED));
 
 		List<WorkspaceMemberResponse> members = workspaceMemberRepository.findActiveMembersByWorkspaceId(workspace.getId());
 
@@ -70,11 +73,11 @@ public class WorkspaceMemberService {
 
 		WorkspaceMember requesterMembership = workspaceMemberRepository
 			.findActiveByWorkspaceIdAndUserIdForUpdate(workspace.getId(), requester.getId())
-			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(ROLE_UPDATE_NOT_ALLOWED_MESSAGE));
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(ROLE_UPDATE_NOT_ALLOWED));
 
 		WorkspaceMemberRole newRole = request.role();
 		if (!requesterMembership.getRole().canUpdateMemberRoleTo(newRole)) {
-			throw new WorkspaceMemberAccessDeniedException(ROLE_UPDATE_NOT_ALLOWED_MESSAGE);
+			throw new WorkspaceMemberAccessDeniedException(ROLE_UPDATE_NOT_ALLOWED);
 		}
 
 		WorkspaceMember targetMembership = workspaceMemberRepository
@@ -84,7 +87,7 @@ public class WorkspaceMemberService {
 		if (targetMembership.getRole().isWorkspaceOwner() && !newRole.isWorkspaceOwner()) {
 			long ownerCount = workspaceMemberRepository.countActiveOwnersByWorkspaceId(workspace.getId());
 			if (ownerCount <= 1L) {
-				throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED_MESSAGE);
+				throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED);
 			}
 		}
 
@@ -95,14 +98,28 @@ public class WorkspaceMemberService {
 
 		Long now = Instant.now(clock).getEpochSecond();
 		targetMembership.updateRole(newRole, now);
-		workspaceMemberRoleHistoryRepository.save(roleHistory(
+
+		WorkspaceMemberRoleHistory history = roleHistory(
 			workspace,
 			targetMembership,
 			previousRole,
 			newRole,
 			requester,
 			now
-		));
+		);
+
+		workspaceMemberRoleHistoryRepository.save(history);
+
+		workspaceActivityRecorder.recordRoleChanged(
+			workspace,
+			requesterMembership,
+			requester,
+			targetMembership,
+			previousRole,
+			newRole,
+			history,
+			now
+		);
 	}
 
 	@Transactional
@@ -135,14 +152,27 @@ public class WorkspaceMemberService {
 		Long now = Instant.now(clock).getEpochSecond();
 		WorkspaceMemberRole roleSnapshot = targetMembership.getRole();
 		targetMembership.softDelete(now);
-		workspaceMemberRemovalHistoryRepository.save(WorkspaceMemberRemovalHistory.builder()
+
+		WorkspaceMemberRemovalHistory history = WorkspaceMemberRemovalHistory.builder()
 			.workspace(workspace)
 			.workspaceMember(targetMembership)
 			.targetUser(targetMembership.getUser())
 			.roleSnapshot(roleSnapshot)
 			.removedBy(requester)
 			.removedAt(now)
-			.build());
+			.build();
+
+		workspaceMemberRemovalHistoryRepository.save(history);
+
+		workspaceActivityRecorder.recordRemoved(
+			workspace,
+			requesterMembership,
+			requester,
+			targetMembership,
+			roleSnapshot,
+			history,
+			now
+		);
 	}
 
 	@Transactional
@@ -154,7 +184,7 @@ public class WorkspaceMemberService {
 
 		WorkspaceMember requesterMembership = workspaceMemberRepository
 			.findActiveByWorkspaceIdAndUserIdForUpdate(workspace.getId(), requester.getId())
-			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException("Workspace membership is required."));
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(MEMBERSHIP_REQUIRED));
 
 		Long now = Instant.now(clock).getEpochSecond();
 		WorkspaceMemberRole roleSnapshot = requesterMembership.getRole();
@@ -165,9 +195,9 @@ public class WorkspaceMemberService {
 				.findOldestActiveAdminMemberIdByWorkspaceId(workspace.getId())
 				.flatMap(memberId -> workspaceMemberRepository
 					.findActiveByWorkspaceIdAndMemberIdForUpdate(workspace.getId(), memberId))
-				.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED_MESSAGE));
+				.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED));
 			if (!ownershipTransferredTo.getRole().isWorkspaceAdmin()) {
-				throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED_MESSAGE);
+				throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED);
 			}
 		}
 
@@ -179,17 +209,30 @@ public class WorkspaceMemberService {
 			WorkspaceMemberRole previousRole = ownershipTransferredTo.getRole();
 			ownershipTransferredTo.updateRole(WorkspaceMemberRole.OWNER, now);
 
-			workspaceMemberRoleHistoryRepository.save(roleHistory(
+			WorkspaceMemberRoleHistory roleHistory = roleHistory(
 				workspace,
 				ownershipTransferredTo,
 				previousRole,
 				WorkspaceMemberRole.OWNER,
 				requester,
 				now
-			));
+			);
+
+			workspaceMemberRoleHistoryRepository.save(roleHistory);
+
+			workspaceActivityRecorder.recordRoleChanged(
+				workspace,
+				requesterMembership,
+				requester,
+				ownershipTransferredTo,
+				previousRole,
+				WorkspaceMemberRole.OWNER,
+				roleHistory,
+				now
+			);
 		}
 
-		workspaceMemberWithdrawalHistoryRepository.save(WorkspaceMemberWithdrawalHistory.builder()
+		WorkspaceMemberWithdrawalHistory withdrawalHistory = WorkspaceMemberWithdrawalHistory.builder()
 			.workspace(workspace)
 			.workspaceMember(requesterMembership)
 			.user(requester)
@@ -197,7 +240,19 @@ public class WorkspaceMemberService {
 			.ownershipTransferredToWorkspaceMember(ownershipTransferredTo)
 			.ownershipTransferredToUser(ownershipTransferredTo == null ? null : ownershipTransferredTo.getUser())
 			.withdrawnAt(now)
-			.build());
+			.build();
+
+		workspaceMemberWithdrawalHistoryRepository.save(withdrawalHistory);
+
+		workspaceActivityRecorder.recordWithdrawn(
+			workspace,
+			requesterMembership,
+			requester,
+			roleSnapshot,
+			ownershipTransferredTo,
+			withdrawalHistory,
+			now
+		);
 	}
 
 	private WorkspaceMemberRoleHistory roleHistory(

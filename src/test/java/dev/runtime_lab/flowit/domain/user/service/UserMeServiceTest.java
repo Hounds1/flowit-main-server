@@ -6,7 +6,7 @@ import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
-import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
+import dev.runtime_lab.flowit.domain.workspace.service.internal.WorkspaceMembershipQueryService;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import java.util.List;
@@ -24,11 +24,11 @@ class UserMeServiceTest {
 
 	private final UserRepository userRepository = mock(UserRepository.class);
 	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
-	private final WorkspaceMemberRepository workspaceMemberRepository = mock(WorkspaceMemberRepository.class);
+	private final WorkspaceMembershipQueryService workspaceMembershipQueryService = mock(WorkspaceMembershipQueryService.class);
 	private final UserMeService userMeService = new UserMeService(
 		userRepository,
 		currentUserProvider,
-		workspaceMemberRepository
+		workspaceMembershipQueryService
 	);
 
 	@Test
@@ -76,7 +76,7 @@ class UserMeServiceTest {
 		CurrentUser currentUser = new CurrentUser(1L, "claim@example.com", "claim-name");
 
 		when(currentUserProvider.findActive(currentUser)).thenReturn(mock(dev.runtime_lab.flowit.domain.user.entity.User.class));
-		when(workspaceMemberRepository.findActiveUserWorkspaces(1L)).thenReturn(expected);
+		when(workspaceMembershipQueryService.findActiveUserWorkspaces(1L)).thenReturn(expected);
 
 		List<UserMeWorkspaceResponse> response = userMeService.getMeWorkspaces(currentUser);
 
@@ -85,7 +85,7 @@ class UserMeServiceTest {
 		assertEquals(3L, response.get(0).memberCount());
 		assertEquals(WorkspaceMemberRole.OWNER, response.get(0).role());
 		verify(currentUserProvider).findActive(currentUser);
-		verify(workspaceMemberRepository).findActiveUserWorkspaces(1L);
+		verify(workspaceMembershipQueryService).findActiveUserWorkspaces(1L);
 	}
 
 	@Test

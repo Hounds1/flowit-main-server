@@ -47,6 +47,69 @@ include::{snippets}/enum-reference/workspace-join-request-status.adoc[]
 
 include::{snippets}/enum-reference/workspace-join-request-method.adoc[]
 
+[#task-status]
+== TaskStatus
+
+작업의 현재 상태입니다. 현재는 자유 전이를 허용합니다.
+
+include::{snippets}/enum-reference/task-status.adoc[]
+
+[#task-priority]
+== TaskPriority
+
+작업의 우선순위입니다.
+
+include::{snippets}/enum-reference/task-priority.adoc[]
+
+[#task-history-action]
+== TaskHistoryAction
+
+작업 변경 이력의 의미 단위 액션입니다.
+
+include::{snippets}/enum-reference/task-history-action.adoc[]
+
+[#task-history-element]
+== TaskHistoryElement
+
+작업 변경 이력의 변경 요소입니다.
+
+include::{snippets}/enum-reference/task-history-element.adoc[]
+
+[#activity-record-topic]
+== ActivityRecordTopic
+
+워크스페이스 최근 활동 조회에 사용하는 주제 필터입니다.
+
+include::{snippets}/enum-reference/activity-record-topic.adoc[]
+
+[#activity-record-domain]
+== ActivityRecordDomain
+
+워크스페이스 최근 활동이 속한 도메인입니다.
+
+include::{snippets}/enum-reference/activity-record-domain.adoc[]
+
+[#activity-record-action]
+== ActivityRecordAction
+
+워크스페이스 최근 활동의 의미 단위 액션입니다.
+
+include::{snippets}/enum-reference/activity-record-action.adoc[]
+
+[#activity-target-type]
+== ActivityTargetType
+
+워크스페이스 최근 활동의 대상 타입입니다.
+
+include::{snippets}/enum-reference/activity-target-type.adoc[]
+
+[#activity-change-element]
+== ActivityChangeElement
+
+워크스페이스 최근 활동의 변경 요소입니다.
+
+include::{snippets}/enum-reference/activity-change-element.adoc[]
+
 [.related-docs]
 == 관련 문서
 

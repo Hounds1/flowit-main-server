@@ -21,12 +21,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessMessages.MEMBERSHIP_REQUIRED;
+import static dev.runtime_lab.flowit.domain.workspace.policy.WorkspaceInviteCodePolicy.MAX_GENERATION_ATTEMPTS;
+
 @Service
 @RequiredArgsConstructor
 public class WorkspaceService {
-
-	private static final int MAX_INVITE_CODE_GENERATION_ATTEMPTS = 10;
-	private static final String MEMBERSHIP_REQUIRED_MESSAGE = "Workspace membership is required.";
 
 	private final CurrentUserProvider currentUserProvider;
 	private final WorkspaceRepository workspaceRepository;
@@ -67,7 +67,7 @@ public class WorkspaceService {
 			.orElseThrow(WorkspaceNotFoundException::new);
 
 		workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(workspace.getId(), requester.getId())
-			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(MEMBERSHIP_REQUIRED_MESSAGE));
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(MEMBERSHIP_REQUIRED));
 
 		return WorkspaceResponse.from(workspace);
 	}
@@ -84,12 +84,14 @@ public class WorkspaceService {
 		}
 
 		Long deletedAt = Instant.now(clock).getEpochSecond();
+
 		workspace.softDelete(deletedAt);
+
 		workspaceMemberRepository.softDeleteActiveByWorkspaceId(workspace.getId(), deletedAt);
 	}
 
 	private String generateUniqueInviteCode() {
-		for (int attempt = 0; attempt < MAX_INVITE_CODE_GENERATION_ATTEMPTS; attempt++) {
+		for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
 			String inviteCode = workspaceInviteCodeGenerator.generate();
 			if (!workspaceRepository.existsByInviteCode(inviteCode)) {
 				return inviteCode;

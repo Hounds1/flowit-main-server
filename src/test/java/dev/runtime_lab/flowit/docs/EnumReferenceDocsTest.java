@@ -1,5 +1,14 @@
 package dev.runtime_lab.flowit.docs;
 
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityChangeElement;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordAction;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordDomain;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordTopic;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
+import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryAction;
+import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryElement;
+import dev.runtime_lab.flowit.domain.task.entity.TaskPriority;
+import dev.runtime_lab.flowit.domain.task.entity.TaskStatus;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequestMethod;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequestStatus;
@@ -13,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.Map.entry;
 
 class EnumReferenceDocsTest {
 
@@ -24,6 +34,15 @@ class EnumReferenceDocsTest {
 			Path.of("build/generated-snippets/enum-reference/workspace-join-request-status.adoc");
 		Path workspaceJoinRequestMethodSnippetPath =
 			Path.of("build/generated-snippets/enum-reference/workspace-join-request-method.adoc");
+		Path taskStatusSnippetPath = Path.of("build/generated-snippets/enum-reference/task-status.adoc");
+		Path taskPrioritySnippetPath = Path.of("build/generated-snippets/enum-reference/task-priority.adoc");
+		Path taskHistoryActionSnippetPath = Path.of("build/generated-snippets/enum-reference/task-history-action.adoc");
+		Path taskHistoryElementSnippetPath = Path.of("build/generated-snippets/enum-reference/task-history-element.adoc");
+		Path activityRecordTopicSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-record-topic.adoc");
+		Path activityRecordDomainSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-record-domain.adoc");
+		Path activityRecordActionSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-record-action.adoc");
+		Path activityTargetTypeSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-target-type.adoc");
+		Path activityChangeElementSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-change-element.adoc");
 
 		Files.createDirectories(userStatusSnippetPath.getParent());
 		Files.writeString(
@@ -63,10 +82,120 @@ class EnumReferenceDocsTest {
 			StandardCharsets.UTF_8
 		);
 
+		Files.writeString(
+			taskStatusSnippetPath,
+			enumTable(TaskStatus.values(), Map.of(
+				TaskStatus.TO_DO, "아직 시작하지 않은 작업 상태입니다.",
+				TaskStatus.IN_PROGRESS, "진행 중인 작업 상태입니다.",
+				TaskStatus.DONE, "완료된 작업 상태입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			taskPrioritySnippetPath,
+			enumTable(TaskPriority.values(), Map.of(
+				TaskPriority.HIGH, "높은 우선순위 작업입니다.",
+				TaskPriority.MEDIUM, "보통 우선순위 작업입니다.",
+				TaskPriority.LOW, "낮은 우선순위 작업입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			taskHistoryActionSnippetPath,
+			enumTable(TaskHistoryAction.values(), Map.of(
+				TaskHistoryAction.CREATED, "작업이 생성된 변경 이력입니다.",
+				TaskHistoryAction.MODIFIED, "작업 일반 필드가 수정된 변경 이력입니다.",
+				TaskHistoryAction.STATUS_CHANGED, "작업 상태가 변경된 이력입니다.",
+				TaskHistoryAction.PROGRESS_CHANGED, "작업 진행도가 변경된 이력입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			taskHistoryElementSnippetPath,
+			enumTable(TaskHistoryElement.values(), Map.of(
+				TaskHistoryElement.TITLE, "작업 제목 변경 요소입니다.",
+				TaskHistoryElement.DESCRIPTION, "작업 설명 변경 요소입니다.",
+				TaskHistoryElement.STATUS, "작업 상태 변경 요소입니다.",
+				TaskHistoryElement.ASSIGNEE, "작업 담당자 변경 요소입니다.",
+				TaskHistoryElement.PRIORITY, "작업 우선순위 변경 요소입니다.",
+				TaskHistoryElement.START_DATE, "작업 시작 예정일 변경 요소입니다.",
+				TaskHistoryElement.DUE_DATE, "작업 마감 예정일 변경 요소입니다.",
+				TaskHistoryElement.TAGS, "작업 태그 목록 변경 요소입니다.",
+				TaskHistoryElement.PROGRESS, "작업 진행도 변경 요소입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			activityRecordTopicSnippetPath,
+			enumTable(ActivityRecordTopic.values(), Map.of(
+				ActivityRecordTopic.ALL, "작업과 멤버 활동을 모두 조회합니다.",
+				ActivityRecordTopic.TASK, "작업 활동만 조회합니다.",
+				ActivityRecordTopic.MEMBER, "워크스페이스 멤버 활동만 조회합니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			activityRecordDomainSnippetPath,
+			enumTable(ActivityRecordDomain.values(), Map.of(
+				ActivityRecordDomain.TASK, "작업 도메인에서 발생한 활동입니다.",
+				ActivityRecordDomain.WORKSPACE_MEMBER, "워크스페이스 멤버십 도메인에서 발생한 활동입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			activityRecordActionSnippetPath,
+			enumTable(ActivityRecordAction.values(), Map.of(
+				ActivityRecordAction.CREATED, "작업 생성 활동입니다.",
+				ActivityRecordAction.MODIFIED, "작업 일반 수정 활동입니다.",
+				ActivityRecordAction.STATUS_CHANGED, "작업 상태 변경 활동입니다.",
+				ActivityRecordAction.PROGRESS_CHANGED, "작업 진행도 변경 활동입니다.",
+				ActivityRecordAction.ROLE_CHANGED, "워크스페이스 멤버 역할 변경 활동입니다.",
+				ActivityRecordAction.REMOVED, "워크스페이스 멤버 강제 퇴장 활동입니다.",
+				ActivityRecordAction.WITHDRAWN, "워크스페이스 멤버 자진 탈퇴 활동입니다.",
+				ActivityRecordAction.JOINED, "워크스페이스 멤버 가입 활동입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			activityTargetTypeSnippetPath,
+			enumTable(ActivityTargetType.values(), Map.of(
+				ActivityTargetType.TASK, "활동 대상이 작업입니다.",
+				ActivityTargetType.WORKSPACE_MEMBER, "활동 대상이 워크스페이스 멤버입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			activityChangeElementSnippetPath,
+			enumTable(ActivityChangeElement.values(), Map.ofEntries(
+				entry(ActivityChangeElement.TITLE, "작업 제목 변경 요소입니다."),
+				entry(ActivityChangeElement.DESCRIPTION, "작업 설명 변경 요소입니다."),
+				entry(ActivityChangeElement.STATUS, "작업 상태 변경 요소입니다."),
+				entry(ActivityChangeElement.ASSIGNEE, "작업 담당자 변경 요소입니다."),
+				entry(ActivityChangeElement.PRIORITY, "작업 우선순위 변경 요소입니다."),
+				entry(ActivityChangeElement.START_DATE, "작업 시작 예정일 변경 요소입니다."),
+				entry(ActivityChangeElement.DUE_DATE, "작업 마감 예정일 변경 요소입니다."),
+				entry(ActivityChangeElement.TAGS, "작업 태그 목록 변경 요소입니다."),
+				entry(ActivityChangeElement.PROGRESS, "작업 진행도 변경 요소입니다."),
+				entry(ActivityChangeElement.ROLE, "워크스페이스 멤버 역할 변경 요소입니다."),
+				entry(ActivityChangeElement.MEMBERSHIP, "워크스페이스 멤버십 생명주기 변경 요소입니다."),
+				entry(ActivityChangeElement.OWNERSHIP_TRANSFER, "워크스페이스 소유권 이전 변경 요소입니다.")
+			)),
+			StandardCharsets.UTF_8
+		);
+
 		assertTrue(Files.exists(userStatusSnippetPath));
 		assertTrue(Files.exists(workspaceMemberRoleSnippetPath));
 		assertTrue(Files.exists(workspaceJoinRequestStatusSnippetPath));
 		assertTrue(Files.exists(workspaceJoinRequestMethodSnippetPath));
+		assertTrue(Files.exists(taskStatusSnippetPath));
+		assertTrue(Files.exists(taskPrioritySnippetPath));
+		assertTrue(Files.exists(taskHistoryActionSnippetPath));
+		assertTrue(Files.exists(taskHistoryElementSnippetPath));
+		assertTrue(Files.exists(activityRecordTopicSnippetPath));
+		assertTrue(Files.exists(activityRecordDomainSnippetPath));
+		assertTrue(Files.exists(activityRecordActionSnippetPath));
+		assertTrue(Files.exists(activityTargetTypeSnippetPath));
+		assertTrue(Files.exists(activityChangeElementSnippetPath));
 	}
 
 	private <E extends Enum<E>> String enumTable(E[] values, Map<E, String> descriptions) {

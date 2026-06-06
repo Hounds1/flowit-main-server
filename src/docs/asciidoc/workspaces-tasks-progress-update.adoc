@@ -1,0 +1,81 @@
+= 작업 진행도 수정 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-workspaces-tasks-progress-update:
+:breadcrumb-section: 작업 API
+:breadcrumb-current: 작업 진행도 수정 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 작업 진행도 수정
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |``PATCH``
+|경로 |``/v1/workspaces/{workspaceId}/tasks/{taskId}/progress``
+|API 상태 |[.badge.stability.experimental]#Experimental#
+|목적 |작업 진행도만 별도로 수정합니다.
+|인증 |JWT access token이 필요합니다.
+|권한 |요청자는 해당 워크스페이스의 활성 멤버여야 합니다.
+|진행도 |``0``부터 ``100``까지의 정수를 사용합니다.
+|처리 방식 |진행도 변경 이력을 별도로 남깁니다.
+|성공 응답 |``200 OK``와 빈 성공 응답 본문을 반환합니다.
+|===
+
+=== HTTP 요청
+
+include::{snippets}/workspaces-tasks-progress-update/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/workspaces-tasks-progress-update/curl-request.adoc[]
+
+=== 경로 파라미터
+
+include::{snippets}/workspaces-tasks-progress-update/path-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/workspaces-tasks-progress-update/request-headers.adoc[]
+
+=== 요청 필드
+
+include::{snippets}/workspaces-tasks-progress-update/request-fields.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/workspaces-tasks-progress-update/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/workspaces-tasks-progress-update/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/workspaces-tasks-progress-update/response-fields.adoc[]
+
+:api-error-auth-required:
+:api-error-validation:
+:api-error-workspace-member-required:
+:api-error-workspace-not-found:
+:api-error-task-not-found:
+:api-error-internal-server:
+include::_api-errors.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:workspaces-tasks-get.html[작업 상세 조회 API]
+* link:workspaces-tasks-update.html[작업 수정 API]
+* link:workspaces-tasks-histories.html[작업 변경 이력 조회 API]
+* link:workspaces-activity-records.html[워크스페이스 최근 활동 API]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]

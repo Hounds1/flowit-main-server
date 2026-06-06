@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.domain.workspace.statemachine;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityRecorder;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequest;
@@ -50,9 +51,12 @@ class WorkspaceJoinStateMachineServiceTest {
 	@jakarta.annotation.Resource
 	private WorkspaceJoinRequestHistoryRepository historyRepository;
 
+	@jakarta.annotation.Resource
+	private WorkspaceActivityRecorder workspaceActivityRecorder;
+
 	@BeforeEach
 	void setUp() {
-		reset(workspaceMemberRepository, historyRepository);
+		reset(workspaceMemberRepository, historyRepository, workspaceActivityRecorder);
 	}
 
 	@Test
@@ -79,6 +83,13 @@ class WorkspaceJoinStateMachineServiceTest {
 		verify(historyRepository).save(joinRequest.getHistories().get(0));
 		verify(historyRepository).save(joinRequest.getHistories().get(1));
 		verify(historyRepository).save(joinRequest.getHistories().get(2));
+		verify(workspaceActivityRecorder).recordJoined(
+			workspace,
+			savedMember,
+			requester,
+			joinRequest.getHistories().get(2),
+			1779889000L
+		);
 	}
 
 	@Test
@@ -125,6 +136,11 @@ class WorkspaceJoinStateMachineServiceTest {
 		@Bean
 		WorkspaceJoinRequestHistoryRepository workspaceJoinRequestHistoryRepository() {
 			return mock(WorkspaceJoinRequestHistoryRepository.class);
+		}
+
+		@Bean
+		WorkspaceActivityRecorder workspaceActivityRecorder() {
+			return mock(WorkspaceActivityRecorder.class);
 		}
 
 		@Bean

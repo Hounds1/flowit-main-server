@@ -115,6 +115,12 @@ ifdef::api-error-workspace-member-not-found[]
 |대상 워크스페이스 멤버가 존재하지 않거나 이미 제거되었습니다.
 endif::api-error-workspace-member-not-found[]
 
+ifdef::api-error-task-not-found[]
+|``404 Not Found``
+|``TASK_404_001``
+|요청한 작업이 존재하지 않거나 삭제되었습니다.
+endif::api-error-task-not-found[]
+
 ifdef::api-error-workspace-invite-code-generation[]
 |``500 Internal Server Error``
 |``WORKSPACE_500_001``

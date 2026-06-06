@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.docs;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityService;
 import dev.runtime_lab.flowit.domain.workspace.controller.WorkspaceController;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceResponse;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceService;
@@ -46,6 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WorkspaceGetApiDocsTest {
 
 	private final WorkspaceService workspaceService = mock(WorkspaceService.class);
+	private final WorkspaceActivityService workspaceActivityService = mock(WorkspaceActivityService.class);
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -54,7 +56,7 @@ class WorkspaceGetApiDocsTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new WorkspaceController(workspaceService))
+			.standaloneSetup(new WorkspaceController(workspaceService, workspaceActivityService))
 			.setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)

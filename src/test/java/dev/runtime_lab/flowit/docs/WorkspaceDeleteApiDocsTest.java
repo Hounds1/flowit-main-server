@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.docs;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityService;
 import dev.runtime_lab.flowit.domain.workspace.controller.WorkspaceController;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
@@ -43,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WorkspaceDeleteApiDocsTest {
 
 	private final WorkspaceService workspaceService = mock(WorkspaceService.class);
+	private final WorkspaceActivityService workspaceActivityService = mock(WorkspaceActivityService.class);
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -51,7 +53,7 @@ class WorkspaceDeleteApiDocsTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new WorkspaceController(workspaceService))
+			.standaloneSetup(new WorkspaceController(workspaceService, workspaceActivityService))
 			.setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)

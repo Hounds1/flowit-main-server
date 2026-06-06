@@ -2,10 +2,8 @@ package dev.runtime_lab.flowit.domain.user.service;
 
 import dev.runtime_lab.flowit.domain.file.entity.FileMetadata;
 import dev.runtime_lab.flowit.domain.file.exception.ProfileImageNotFoundException;
-import dev.runtime_lab.flowit.domain.file.repository.FileMetadataRepository;
-import dev.runtime_lab.flowit.domain.file.storage.LocalProfileImageStorage;
+import dev.runtime_lab.flowit.domain.file.service.internal.ProfileImageFileService;
 import dev.runtime_lab.flowit.domain.file.storage.ProfileImageFileContent;
-import dev.runtime_lab.flowit.domain.file.storage.StoredProfileImageFile;
 import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserUpdateRequest;
@@ -19,7 +17,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.web.multipart.MultipartFile;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -36,13 +33,11 @@ import static org.mockito.Mockito.when;
 class UserProfileServiceTest {
 
 	private final CurrentUserProvider currentUserProvider = mock(CurrentUserProvider.class);
-	private final FileMetadataRepository fileMetadataRepository = mock(FileMetadataRepository.class);
-	private final LocalProfileImageStorage localProfileImageStorage = mock(LocalProfileImageStorage.class);
+	private final ProfileImageFileService profileImageFileService = mock(ProfileImageFileService.class);
 	private final Clock clock = Clock.fixed(Instant.parse("2026-05-30T12:00:00Z"), ZoneOffset.UTC);
 	private final UserProfileService service = new UserProfileService(
 		currentUserProvider,
-		fileMetadataRepository,
-		localProfileImageStorage,
+		profileImageFileService,
 		clock
 	);
 
@@ -101,33 +96,21 @@ class UserProfileServiceTest {
 		FileMetadata oldFileMetadata = fileMetadata(2001L, "users/1/old.png");
 		FileMetadata savedFileMetadata = fileMetadata(3001L, "users/1/new.png");
 		User user = activeUser(oldFileMetadata);
-		ArgumentCaptor<FileMetadata> fileMetadataCaptor = ArgumentCaptor.forClass(FileMetadata.class);
 
 		when(currentUserProvider.findActiveForUpdate(any(CurrentUser.class))).thenReturn(user);
-		when(localProfileImageStorage.store(1L, multipartFile))
-			.thenReturn(new StoredProfileImageFile("users/1/new.png", "avatar.png", "image/png", 68L, 1, 1));
-		when(fileMetadataRepository.save(fileMetadataCaptor.capture())).thenReturn(savedFileMetadata);
+		when(profileImageFileService.store(1L, multipartFile)).thenReturn(savedFileMetadata);
 
 		UserProfileImageUpdateResponse response = service.replaceProfileImage(
 			new CurrentUser(1L, "user@example.com", "nickname"),
 			multipartFile
 		);
 
-		FileMetadata fileMetadataToSave = fileMetadataCaptor.getValue();
-		assertEquals("users/1/new.png", fileMetadataToSave.getStorageKey());
-		assertEquals("avatar.png", fileMetadataToSave.getOriginalFilename());
-		assertEquals("image/png", fileMetadataToSave.getContentType());
-		assertEquals(68L, fileMetadataToSave.getSizeBytes());
-		assertEquals(1, fileMetadataToSave.getWidth());
-		assertEquals(1, fileMetadataToSave.getHeight());
-		assertEquals(1_780_142_400_000L, fileMetadataToSave.getCreatedAt());
-		assertEquals(1_780_142_400_000L, fileMetadataToSave.getUpdatedAt());
 		assertSame(savedFileMetadata, user.getProfileImageFile());
 		assertEquals(1_780_142_400L, user.getUpdatedAt());
 		assertEquals(3001L, response.fileId());
 
-		verify(fileMetadataRepository).delete(oldFileMetadata);
-		verify(localProfileImageStorage).deleteIfExists("users/1/old.png");
+		verify(profileImageFileService).store(1L, multipartFile);
+		verify(profileImageFileService).deleteAfterCommit(oldFileMetadata);
 	}
 
 	@Test
@@ -141,8 +124,7 @@ class UserProfileServiceTest {
 			() -> service.replaceProfileImage(new CurrentUser(1L, "user@example.com", "nickname"), multipartFile)
 		);
 
-		verify(localProfileImageStorage, never()).store(any(), any());
-		verify(fileMetadataRepository, never()).save(any());
+		verify(profileImageFileService, never()).store(any(), any());
 	}
 
 	@Test
@@ -152,7 +134,7 @@ class UserProfileServiceTest {
 		User user = activeUser(profileImageFile);
 
 		when(currentUserProvider.findActive(any(CurrentUser.class))).thenReturn(user);
-		when(localProfileImageStorage.load("users/1/avatar.png")).thenReturn(new ProfileImageFileContent(bytes));
+		when(profileImageFileService.load(profileImageFile)).thenReturn(new ProfileImageFileContent(bytes));
 
 		UserProfileImageContentResponse response = service.getProfileImage(
 			new CurrentUser(1L, "user@example.com", "nickname")
@@ -162,7 +144,7 @@ class UserProfileServiceTest {
 		assertEquals(3L, response.contentLength());
 		assertArrayEquals(bytes, response.bytes());
 		verify(currentUserProvider).findActive(any(CurrentUser.class));
-		verify(localProfileImageStorage).load("users/1/avatar.png");
+		verify(profileImageFileService).load(profileImageFile);
 	}
 
 	@Test
@@ -173,7 +155,7 @@ class UserProfileServiceTest {
 			InvalidAuthenticatedUserException.class,
 			() -> service.getProfileImage(new CurrentUser(1L, "user@example.com", "nickname"))
 		);
-		verifyNoInteractions(localProfileImageStorage);
+		verifyNoInteractions(profileImageFileService);
 	}
 
 	@Test
@@ -184,7 +166,7 @@ class UserProfileServiceTest {
 			InvalidAuthenticatedUserException.class,
 			() -> service.getProfileImage(new CurrentUser(1L, "user@example.com", "nickname"))
 		);
-		verifyNoInteractions(localProfileImageStorage);
+		verifyNoInteractions(profileImageFileService);
 	}
 
 	@Test
@@ -196,7 +178,7 @@ class UserProfileServiceTest {
 			ProfileImageNotFoundException.class,
 			() -> service.getProfileImage(new CurrentUser(1L, "user@example.com", "nickname"))
 		);
-		verifyNoInteractions(localProfileImageStorage);
+		verifyNoInteractions(profileImageFileService);
 	}
 
 	private User activeUser(FileMetadata profileImageFile) {

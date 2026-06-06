@@ -1,5 +1,15 @@
 package dev.runtime_lab.flowit.domain.workspace.controller;
 
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityActorResponse;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityChangeElement;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordAction;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordDomain;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordListQuery;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordResponse;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordTopic;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetResponse;
+import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityService;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceCreateResponse;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceResponse;
@@ -11,6 +21,7 @@ import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceService;
 import dev.runtime_lab.flowit.global.security.authentication.AuthenticatedUserArgumentResolver;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.exception.GlobalExceptionHandler;
+import dev.runtime_lab.flowit.global.web.response.ApiListData;
 import dev.runtime_lab.flowit.global.web.response.ApiResponseBodyAdvice;
 import java.time.Instant;
 import java.util.List;
@@ -28,6 +39,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -44,6 +56,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WorkspaceControllerTest {
 
 	private final WorkspaceService workspaceService = mock(WorkspaceService.class);
+	private final WorkspaceActivityService workspaceActivityService = mock(WorkspaceActivityService.class);
 	private MockMvc mockMvc;
 
 	@BeforeEach
@@ -52,7 +65,7 @@ class WorkspaceControllerTest {
 		validator.afterPropertiesSet();
 
 		mockMvc = MockMvcBuilders
-			.standaloneSetup(new WorkspaceController(workspaceService))
+			.standaloneSetup(new WorkspaceController(workspaceService, workspaceActivityService))
 			.setCustomArgumentResolvers(new AuthenticatedUserArgumentResolver())
 			.setControllerAdvice(new ApiResponseBodyAdvice(), new GlobalExceptionHandler())
 			.setValidator(validator)
@@ -232,6 +245,67 @@ class WorkspaceControllerTest {
 		assertEquals("user@example.com", currentUserCaptor.getValue().email());
 		assertEquals("nickname", currentUserCaptor.getValue().name());
 		assertEquals(10L, workspaceIdCaptor.getValue());
+	}
+
+	@Test
+	void activityRecordsReturnsWorkspaceActivities() throws Exception {
+		ArgumentCaptor<CurrentUser> currentUserCaptor = ArgumentCaptor.forClass(CurrentUser.class);
+		ArgumentCaptor<ActivityRecordListQuery> queryCaptor = ArgumentCaptor.forClass(ActivityRecordListQuery.class);
+		ActivityRecordResponse record = new ActivityRecordResponse(
+			200L,
+			1780916400L,
+			ActivityRecordDomain.TASK,
+			new ActivityActorResponse(10L, 1L, "Actor"),
+			new ActivityTargetResponse(ActivityTargetType.TASK, 100L, "Login UI"),
+			ActivityRecordAction.STATUS_CHANGED,
+			1,
+			List.of(ActivityChangeElement.STATUS),
+			List.of()
+		);
+
+		when(workspaceActivityService.activityRecords(any(CurrentUser.class), eq(1L), any(ActivityRecordListQuery.class)))
+			.thenReturn(ApiListData.of(List.of(record), 1L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "actor@example.com", "Actor"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/activity-records", 1L)
+				.param("topic", "TASK")
+				.param("rangeDays", "7")
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data.items[0].id").value(200L))
+			.andExpect(jsonPath("$.data.items[0].domain").value("TASK"))
+			.andExpect(jsonPath("$.data.items[0].target.type").value("TASK"))
+			.andExpect(jsonPath("$.data.totalCount").value(1L));
+
+		verify(workspaceActivityService).activityRecords(currentUserCaptor.capture(), eq(1L), queryCaptor.capture());
+		assertEquals(1L, currentUserCaptor.getValue().id());
+		assertEquals(ActivityRecordTopic.TASK, queryCaptor.getValue().topic());
+		assertEquals(7, queryCaptor.getValue().rangeDays());
+	}
+
+	@Test
+	void activityRecordsUsesDefaultFiltersWhenParametersAreMissing() throws Exception {
+		ArgumentCaptor<ActivityRecordListQuery> queryCaptor = ArgumentCaptor.forClass(ActivityRecordListQuery.class);
+
+		when(workspaceActivityService.activityRecords(any(CurrentUser.class), eq(1L), any(ActivityRecordListQuery.class)))
+			.thenReturn(ApiListData.of(List.of(), 0L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "actor@example.com", "Actor"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/activity-records", 1L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data.items").isArray())
+			.andExpect(jsonPath("$.data.totalCount").value(0L));
+
+		verify(workspaceActivityService).activityRecords(any(CurrentUser.class), eq(1L), queryCaptor.capture());
+		assertNull(queryCaptor.getValue().topic());
+		assertNull(queryCaptor.getValue().rangeDays());
 	}
 
 	@Test
