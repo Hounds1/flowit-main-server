@@ -2,10 +2,8 @@ package dev.runtime_lab.flowit.domain.user.service;
 
 import dev.runtime_lab.flowit.domain.file.entity.FileMetadata;
 import dev.runtime_lab.flowit.domain.file.exception.ProfileImageNotFoundException;
-import dev.runtime_lab.flowit.domain.file.repository.FileMetadataRepository;
-import dev.runtime_lab.flowit.domain.file.storage.LocalProfileImageStorage;
+import dev.runtime_lab.flowit.domain.file.service.internal.ProfileImageFileService;
 import dev.runtime_lab.flowit.domain.file.storage.ProfileImageFileContent;
-import dev.runtime_lab.flowit.domain.file.storage.StoredProfileImageFile;
 import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageUpdateResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserUpdateRequest;
@@ -16,21 +14,16 @@ import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
 
 	private final CurrentUserProvider currentUserProvider;
-	private final FileMetadataRepository fileMetadataRepository;
-	private final LocalProfileImageStorage localProfileImageStorage;
+	private final ProfileImageFileService profileImageFileService;
 	private final Clock clock;
 
 	@Transactional
@@ -49,28 +42,12 @@ public class UserProfileService {
 	public UserProfileImageUpdateResponse replaceProfileImage(CurrentUser currentUser, MultipartFile imageFile) {
 		User user = currentUserProvider.findActiveForUpdate(currentUser);
 
-		StoredProfileImageFile storedFile = localProfileImageStorage.store(user.getId(), imageFile);
-		registerNewFileRollbackCleanup(storedFile.storageKey());
-
 		Instant now = Instant.now(clock);
-		FileMetadata newFileMetadata = fileMetadataRepository.save(
-			FileMetadata.builder()
-				.storageKey(storedFile.storageKey())
-				.originalFilename(storedFile.originalFilename())
-				.contentType(storedFile.contentType())
-				.sizeBytes(storedFile.sizeBytes())
-				.width(storedFile.width())
-				.height(storedFile.height())
-				.createdAt(now.toEpochMilli())
-				.updatedAt(now.toEpochMilli())
-				.build()
-		);
-
+		FileMetadata newFileMetadata = profileImageFileService.store(user.getId(), imageFile);
 		FileMetadata oldFileMetadata = user.replaceProfileImageFile(newFileMetadata, now.getEpochSecond());
+
 		if (oldFileMetadata != null) {
-			String oldStorageKey = oldFileMetadata.getStorageKey();
-			fileMetadataRepository.delete(oldFileMetadata);
-			registerOldFileDeletionAfterCommit(oldStorageKey);
+			profileImageFileService.deleteAfterCommit(oldFileMetadata);
 		}
 
 		return UserProfileImageUpdateResponse.from(newFileMetadata);
@@ -85,44 +62,8 @@ public class UserProfileService {
 			throw new ProfileImageNotFoundException();
 		}
 
-		ProfileImageFileContent content = localProfileImageStorage.load(profileImageFile.getStorageKey());
+		ProfileImageFileContent content = profileImageFileService.load(profileImageFile);
+
 		return new UserProfileImageContentResponse(profileImageFile.getContentType(), content.bytes());
-	}
-
-	private void registerNewFileRollbackCleanup(String storageKey) {
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			return;
-		}
-
-		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-
-			@Override
-			public void afterCompletion(int status) {
-				if (status == STATUS_COMMITTED) {
-					return;
-				}
-				localProfileImageStorage.deleteIfExists(storageKey);
-			}
-		});
-	}
-
-	private void registerOldFileDeletionAfterCommit(String storageKey) {
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			localProfileImageStorage.deleteIfExists(storageKey);
-			return;
-		}
-
-		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-
-			@Override
-			public void afterCommit() {
-				try {
-					localProfileImageStorage.deleteIfExists(storageKey);
-				}
-				catch (RuntimeException exception) {
-					log.warn("Failed to delete previous profile image after commit: {}", storageKey, exception);
-				}
-			}
-		});
 	}
 }

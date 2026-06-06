@@ -1,0 +1,82 @@
+= 작업 변경 이력 조회 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-workspaces-tasks-histories:
+:breadcrumb-section: 작업 API
+:breadcrumb-current: 작업 변경 이력 조회 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 작업 변경 이력 조회
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |``GET``
+|경로 |``/v1/workspaces/{workspaceId}/tasks/{taskId}/histories``
+|API 상태 |[.badge.stability.experimental]#Experimental#
+|목적 |특정 작업에 대한 변경 이력만 조회합니다.
+|인증 |JWT access token이 필요합니다.
+|권한 |요청자는 해당 워크스페이스의 활성 멤버여야 합니다.
+|표현 방식 |서버는 문장을 강제하지 않고 수행자, 대상, 액션, 변경 요소를 의미 키로 반환합니다.
+|최근 활동과의 차이 |워크스페이스 전체 최근 활동은 워크스페이스 최근 활동 API에서 조회합니다.
+|응답 |``200 OK``
+|===
+
+=== HTTP 요청
+
+include::{snippets}/workspaces-tasks-histories/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/workspaces-tasks-histories/curl-request.adoc[]
+
+=== 경로 파라미터
+
+include::{snippets}/workspaces-tasks-histories/path-parameters.adoc[]
+
+=== 쿼리 파라미터
+
+include::{snippets}/workspaces-tasks-histories/query-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/workspaces-tasks-histories/request-headers.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/workspaces-tasks-histories/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/workspaces-tasks-histories/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/workspaces-tasks-histories/response-fields.adoc[]
+
+:api-error-auth-required:
+:api-error-validation:
+:api-error-workspace-member-required:
+:api-error-workspace-not-found:
+:api-error-task-not-found:
+:api-error-internal-server:
+include::_api-errors.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:workspaces-tasks-get.html[작업 상세 조회 API]
+* link:workspaces-tasks-update.html[작업 수정 API]
+* link:workspaces-tasks-progress-update.html[작업 진행도 수정 API]
+* link:workspaces-activity-records.html[워크스페이스 최근 활동 API]
+* link:enum-reference.html[Enum Reference]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]

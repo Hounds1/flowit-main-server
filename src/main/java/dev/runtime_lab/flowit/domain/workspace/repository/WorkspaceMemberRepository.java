@@ -75,6 +75,21 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 		);
 	}
 
+	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndMemberId(Long workspaceId, Long memberId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+
+		return Optional.ofNullable(
+			queryFactory.selectFrom(workspaceMember)
+				.join(workspaceMember.user, QUser.user).fetchJoin()
+				.where(
+					workspaceMember.workspace.id.eq(workspaceId),
+					workspaceMember.id.eq(memberId),
+					workspaceMember.deletedAt.isNull()
+				)
+				.fetchOne()
+		);
+	}
+
 	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndUserId(Long workspaceId, Long userId) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
 

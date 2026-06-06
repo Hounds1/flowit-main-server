@@ -1,0 +1,79 @@
+= 워크스페이스 최근 활동 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-workspaces-activity-records:
+:breadcrumb-section: 워크스페이스 API
+:breadcrumb-current: 워크스페이스 최근 활동 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 워크스페이스 최근 활동 조회
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |`GET`
+|경로 |`/v1/workspaces/{workspaceId}/activity-records`
+|API 상태 |[.badge.stability.experimental]#Experimental#
+|목적 |워크스페이스 안에서 발생한 작업/멤버십 활동을 최근 N일 범위로 조회합니다.
+|인증 |JWT access token이 필요합니다.
+|권한 |요청자는 해당 워크스페이스의 활성 멤버여야 합니다.
+|기본 조회 조건 |`topic=ALL`, `rangeDays=5`를 기본값으로 사용합니다.
+|렌더링 단위 |`items[]`의 레코드 하나가 최근 활동 목록의 한 줄 렌더링 단위입니다.
+|표현 방식 |서버는 문장을 강제하지 않고 `actor`, `target`, `action`, `changeCount`, `changedElements` 의미 키를 반환합니다.
+|상세 diff |`changes[]`는 단일 `action`에 딸린 상세 변경 목록이며, 기본 목록 렌더링이 아니라 펼침/상세 UI에서 사용합니다.
+|===
+
+=== HTTP 요청
+
+include::{snippets}/workspaces-activity-records/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/workspaces-activity-records/curl-request.adoc[]
+
+=== 경로 파라미터
+
+include::{snippets}/workspaces-activity-records/path-parameters.adoc[]
+
+=== 쿼리 파라미터
+
+include::{snippets}/workspaces-activity-records/query-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/workspaces-activity-records/request-headers.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/workspaces-activity-records/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/workspaces-activity-records/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/workspaces-activity-records/response-fields.adoc[]
+
+:api-error-auth-required:
+:api-error-workspace-member-required:
+:api-error-workspace-not-found:
+:api-error-internal-server:
+include::_api-errors.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:workspaces-tasks-list.html[작업 목록 조회 API]
+* link:workspaces-members.html[워크스페이스 멤버 목록 조회 API]
+* link:enum-reference.html[Enum Reference]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]

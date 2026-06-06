@@ -1,0 +1,83 @@
+= 작업 생성 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-workspaces-tasks-create:
+:breadcrumb-section: 작업 API
+:breadcrumb-current: 작업 생성 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 작업 생성
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |``POST``
+|경로 |``/v1/workspaces/{workspaceId}/tasks``
+|API 상태 |[.badge.stability.experimental]#Experimental#
+|목적 |워크스페이스 안에 새 작업을 생성합니다.
+|인증 |JWT access token이 필요합니다.
+|권한 |요청자는 해당 워크스페이스의 활성 멤버여야 합니다.
+|상태 |생성 시 ``status``를 생략하면 ``TO_DO``로 처리합니다.
+|담당자 |``assigneeMemberId``는 ``null``일 수 있으며, 이 경우 미할당 작업으로 생성합니다.
+|태그 |최대 10개까지 허용하며, 같은 작업 안에서는 정규화된 이름 기준으로 중복 제거됩니다.
+|설명 |``descriptionMarkdown`` 원문 문자열을 저장합니다. 서버는 마크다운을 렌더링하지 않습니다.
+|응답 |``201 Created``
+|===
+
+=== HTTP 요청
+
+include::{snippets}/workspaces-tasks-create/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/workspaces-tasks-create/curl-request.adoc[]
+
+=== 경로 파라미터
+
+include::{snippets}/workspaces-tasks-create/path-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/workspaces-tasks-create/request-headers.adoc[]
+
+=== 요청 필드
+
+include::{snippets}/workspaces-tasks-create/request-fields.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/workspaces-tasks-create/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/workspaces-tasks-create/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/workspaces-tasks-create/response-fields.adoc[]
+
+:api-error-auth-required:
+:api-error-validation:
+:api-error-workspace-member-required:
+:api-error-workspace-not-found:
+:api-error-workspace-member-not-found:
+:api-error-internal-server:
+include::_api-errors.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:workspaces-tasks-list.html[작업 목록 조회 API]
+* link:workspaces-tasks-get.html[작업 상세 조회 API]
+* link:workspaces-members.html[워크스페이스 멤버 목록 조회 API]
+* link:enum-reference.html[Enum Reference]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]

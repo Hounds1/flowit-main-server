@@ -1,0 +1,9 @@
+package dev.runtime_lab.flowit.domain.activity.entity;
+
+public enum ActivityRecordSourceType {
+	TASK_CHANGE_HISTORY,
+	WORKSPACE_MEMBER_ROLE_HISTORY,
+	WORKSPACE_MEMBER_REMOVAL_HISTORY,
+	WORKSPACE_MEMBER_WITHDRAWAL_HISTORY,
+	WORKSPACE_JOIN_REQUEST_HISTORY
+}

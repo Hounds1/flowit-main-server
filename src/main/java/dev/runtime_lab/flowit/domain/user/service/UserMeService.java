@@ -4,7 +4,7 @@ import dev.runtime_lab.flowit.domain.user.dto.UserMeResponse;
 import dev.runtime_lab.flowit.domain.user.dto.UserMeWorkspaceResponse;
 import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
-import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
+import dev.runtime_lab.flowit.domain.workspace.service.internal.WorkspaceMembershipQueryService;
 import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.security.authentication.InvalidAuthenticatedUserException;
 import java.util.List;
@@ -18,7 +18,7 @@ public class UserMeService {
 
 	private final UserRepository userRepository;
 	private final CurrentUserProvider currentUserProvider;
-	private final WorkspaceMemberRepository workspaceMemberRepository;
+	private final WorkspaceMembershipQueryService workspaceMembershipQueryService;
 
 	@Transactional(readOnly = true)
 	public UserMeResponse getMe(CurrentUser currentUser) {
@@ -30,6 +30,6 @@ public class UserMeService {
 	public List<UserMeWorkspaceResponse> getMeWorkspaces(CurrentUser currentUser) {
 		currentUserProvider.findActive(currentUser);
 
-		return workspaceMemberRepository.findActiveUserWorkspaces(currentUser.id());
+		return workspaceMembershipQueryService.findActiveUserWorkspaces(currentUser.id());
 	}
 }

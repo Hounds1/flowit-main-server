@@ -7,8 +7,7 @@ import dev.runtime_lab.flowit.domain.auth.dto.TokenRefreshRequest;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidLoginCredentialsException;
 import dev.runtime_lab.flowit.domain.auth.exception.InvalidRefreshTokenException;
 import dev.runtime_lab.flowit.domain.user.entity.User;
-import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
+import dev.runtime_lab.flowit.domain.user.service.internal.UserAuthenticationService;
 import dev.runtime_lab.flowit.global.security.jwt.FlowitJwtClaims;
 import dev.runtime_lab.flowit.global.security.jwt.JwtTokenService;
 import dev.runtime_lab.flowit.global.security.jwt.RefreshTokenService;
@@ -27,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-	private final UserRepository userRepository;
+	private final UserAuthenticationService userAuthenticationService;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenService jwtTokenService;
 	private final RefreshTokenService refreshTokenService;
@@ -37,8 +36,7 @@ public class AuthenticationService {
 	public AuthTokenResult login(LoginRequest request) {
 		passwordPolicy.validate(request.password());
 
-		User user = userRepository.findActiveByEmail(request.email())
-			.filter(activeUser -> activeUser.getStatus() == UserStatus.ACTIVE)
+		User user = userAuthenticationService.findActiveByEmail(request.email())
 			.orElseThrow(InvalidLoginCredentialsException::new);
 
 		if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -52,7 +50,9 @@ public class AuthenticationService {
 	public AuthTokenResult refresh(TokenRefreshRequest request) {
 		RefreshTokenPayload refreshTokenPayload = refreshTokenService.consume(request.refreshToken())
 			.orElseThrow(InvalidRefreshTokenException::new);
+
 		User user = findActiveUser(refreshTokenPayload.userId());
+
 		if (!Objects.equals(user.getTokenVersion(), refreshTokenPayload.tokenVersion())) {
 			throw new InvalidRefreshTokenException();
 		}
@@ -81,9 +81,7 @@ public class AuthenticationService {
 
 	private User findActiveUser(String userId) {
 		try {
-			return userRepository.findById(Long.valueOf(userId))
-				.filter(user -> user.getDeletedAt() == null)
-				.filter(user -> user.getStatus() == UserStatus.ACTIVE)
+			return userAuthenticationService.findActiveById(Long.valueOf(userId))
 				.orElseThrow(InvalidRefreshTokenException::new);
 		}
 		catch (NumberFormatException exception) {

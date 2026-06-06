@@ -8,7 +8,7 @@
 :stylesdir: css
 :linkcss:
 :nav-workspaces-join-requests:
-:breadcrumb-section: 워크스페이스 API
+:breadcrumb-section: 워크스페이스 멤버 API
 :breadcrumb-current: 워크스페이스 가입 요청 이력 API
 
 include::_navigation.adoc[]

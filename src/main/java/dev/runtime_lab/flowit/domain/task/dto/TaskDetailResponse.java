@@ -1,0 +1,44 @@
+package dev.runtime_lab.flowit.domain.task.dto;
+
+import dev.runtime_lab.flowit.domain.task.entity.Task;
+import dev.runtime_lab.flowit.domain.task.entity.TaskPriority;
+import dev.runtime_lab.flowit.domain.task.entity.TaskStatus;
+import java.time.LocalDate;
+import java.util.List;
+
+public record TaskDetailResponse(
+	Long id,
+	Long workspaceId,
+	String title,
+	String descriptionMarkdown,
+	TaskStatus status,
+	TaskAssigneeResponse assignee,
+	TaskPriority priority,
+	LocalDate startDate,
+	LocalDate dueDate,
+	List<String> tags,
+	Integer progress,
+	Long createdByUserId,
+	Long createdAt,
+	Long updatedAt
+) {
+
+	public static TaskDetailResponse from(Task task, List<String> tags) {
+		return new TaskDetailResponse(
+			task.getId(),
+			task.getWorkspace().getId(),
+			task.getTitle(),
+			task.getDescriptionMarkdown(),
+			task.getStatus(),
+			TaskAssigneeResponse.from(task.getAssignee()),
+			task.getPriority(),
+			task.getStartDate(),
+			task.getDueDate(),
+			List.copyOf(tags),
+			task.getProgress(),
+			task.getCreatedBy().getId(),
+			task.getCreatedAt(),
+			task.getUpdatedAt()
+		);
+	}
+}

@@ -8,7 +8,7 @@
 :stylesdir: css
 :linkcss:
 :nav-workspaces-member-remove:
-:breadcrumb-section: 워크스페이스 API
+:breadcrumb-section: 워크스페이스 멤버 API
 :breadcrumb-current: 워크스페이스 멤버 강제 퇴장 API
 
 include::_navigation.adoc[]

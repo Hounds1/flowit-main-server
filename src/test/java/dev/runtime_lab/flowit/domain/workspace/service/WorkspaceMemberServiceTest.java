@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityRecorder;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
@@ -50,6 +51,7 @@ class WorkspaceMemberServiceTest {
 		mock(WorkspaceMemberRemovalHistoryRepository.class);
 	private final WorkspaceMemberWithdrawalHistoryRepository workspaceMemberWithdrawalHistoryRepository =
 		mock(WorkspaceMemberWithdrawalHistoryRepository.class);
+	private final WorkspaceActivityRecorder workspaceActivityRecorder = mock(WorkspaceActivityRecorder.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1779889000L), ZoneOffset.UTC);
 	private final WorkspaceMemberService workspaceMemberService = new WorkspaceMemberService(
 		currentUserProvider,
@@ -58,6 +60,7 @@ class WorkspaceMemberServiceTest {
 		workspaceMemberRoleHistoryRepository,
 		workspaceMemberRemovalHistoryRepository,
 		workspaceMemberWithdrawalHistoryRepository,
+		workspaceActivityRecorder,
 		clock
 	);
 

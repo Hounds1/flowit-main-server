@@ -19,12 +19,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static dev.runtime_lab.flowit.domain.workspace.exception.WorkspaceAccessMessages.JOIN_REQUEST_HISTORY_ACCESS_DENIED;
+
 @Service
 @RequiredArgsConstructor
 public class WorkspaceJoinRequestService {
-
-	private static final String JOIN_REQUEST_HISTORY_ACCESS_DENIED_MESSAGE =
-		"Workspace join request history access is not allowed.";
 
 	private final CurrentUserProvider currentUserProvider;
 	private final WorkspaceRepository workspaceRepository;
@@ -58,10 +57,10 @@ public class WorkspaceJoinRequestService {
 			.orElseThrow(WorkspaceNotFoundException::new);
 		WorkspaceMember requesterMembership = workspaceMemberRepository
 			.findActiveByWorkspaceIdAndUserId(workspace.getId(), requester.getId())
-			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(JOIN_REQUEST_HISTORY_ACCESS_DENIED_MESSAGE));
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(JOIN_REQUEST_HISTORY_ACCESS_DENIED));
 
 		if (!requesterMembership.getRole().canManageJoinRequests()) {
-			throw new WorkspaceMemberAccessDeniedException(JOIN_REQUEST_HISTORY_ACCESS_DENIED_MESSAGE);
+			throw new WorkspaceMemberAccessDeniedException(JOIN_REQUEST_HISTORY_ACCESS_DENIED);
 		}
 
 		return new WorkspaceJoinRequestsResponse(

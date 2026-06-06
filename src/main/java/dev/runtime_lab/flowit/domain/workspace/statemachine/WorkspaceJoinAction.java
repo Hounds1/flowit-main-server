@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.domain.workspace.statemachine;
 
+import dev.runtime_lab.flowit.domain.activity.service.WorkspaceActivityRecorder;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequest;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequestEvent;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceJoinRequestHistory;
@@ -22,6 +23,7 @@ public class WorkspaceJoinAction extends WorkspaceJoinStateMachineSupport
 
 	private final WorkspaceMemberRepository workspaceMemberRepository;
 	private final WorkspaceJoinRequestHistoryRepository historyRepository;
+	private final WorkspaceActivityRecorder workspaceActivityRecorder;
 	private final Clock clock;
 
 	@Override
@@ -40,6 +42,13 @@ public class WorkspaceJoinAction extends WorkspaceJoinStateMachineSupport
 
 		WorkspaceJoinRequestHistory history = joinRequest.join(workspaceMember, actor(context), now);
 		historyRepository.save(history);
+		workspaceActivityRecorder.recordJoined(
+			joinRequest.getWorkspace(),
+			workspaceMember,
+			actor(context),
+			history,
+			now
+		);
 	}
 
 	private Long now() {

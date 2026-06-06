@@ -144,12 +144,22 @@ ifndef::nav-workspaces-get[]
 * link:workspaces-get.html[워크스페이스 조회 API]
 endif::nav-workspaces-get[]
 
+ifdef::nav-workspaces-activity-records[]
+* [.is-current]#워크스페이스 최근 활동 API#
+endif::nav-workspaces-activity-records[]
+ifndef::nav-workspaces-activity-records[]
+* link:workspaces-activity-records.html[워크스페이스 최근 활동 API]
+endif::nav-workspaces-activity-records[]
+
 ifdef::nav-workspaces-delete[]
 * [.is-current]#워크스페이스 삭제 API#
 endif::nav-workspaces-delete[]
 ifndef::nav-workspaces-delete[]
 * link:workspaces-delete.html[워크스페이스 삭제 API]
 endif::nav-workspaces-delete[]
+
+[.docs-nav-section-title]
+워크스페이스 멤버 API
 
 ifdef::nav-workspaces-join-requests-invite-code[]
 * [.is-current]#초대 코드 워크스페이스 가입 API#
@@ -192,4 +202,49 @@ endif::nav-workspaces-member-withdraw[]
 ifndef::nav-workspaces-member-withdraw[]
 * link:workspaces-member-withdraw.html[워크스페이스 멤버 탈퇴 API]
 endif::nav-workspaces-member-withdraw[]
+
+[.docs-nav-section-title]
+작업 API
+
+ifdef::nav-workspaces-tasks-create[]
+* [.is-current]#작업 생성 API#
+endif::nav-workspaces-tasks-create[]
+ifndef::nav-workspaces-tasks-create[]
+* link:workspaces-tasks-create.html[작업 생성 API]
+endif::nav-workspaces-tasks-create[]
+
+ifdef::nav-workspaces-tasks-list[]
+* [.is-current]#작업 목록 조회 API#
+endif::nav-workspaces-tasks-list[]
+ifndef::nav-workspaces-tasks-list[]
+* link:workspaces-tasks-list.html[작업 목록 조회 API]
+endif::nav-workspaces-tasks-list[]
+
+ifdef::nav-workspaces-tasks-get[]
+* [.is-current]#작업 상세 조회 API#
+endif::nav-workspaces-tasks-get[]
+ifndef::nav-workspaces-tasks-get[]
+* link:workspaces-tasks-get.html[작업 상세 조회 API]
+endif::nav-workspaces-tasks-get[]
+
+ifdef::nav-workspaces-tasks-update[]
+* [.is-current]#작업 수정 API#
+endif::nav-workspaces-tasks-update[]
+ifndef::nav-workspaces-tasks-update[]
+* link:workspaces-tasks-update.html[작업 수정 API]
+endif::nav-workspaces-tasks-update[]
+
+ifdef::nav-workspaces-tasks-progress-update[]
+* [.is-current]#작업 진행도 수정 API#
+endif::nav-workspaces-tasks-progress-update[]
+ifndef::nav-workspaces-tasks-progress-update[]
+* link:workspaces-tasks-progress-update.html[작업 진행도 수정 API]
+endif::nav-workspaces-tasks-progress-update[]
+
+ifdef::nav-workspaces-tasks-histories[]
+* [.is-current]#작업 변경 이력 조회 API#
+endif::nav-workspaces-tasks-histories[]
+ifndef::nav-workspaces-tasks-histories[]
+* link:workspaces-tasks-histories.html[작업 변경 이력 조회 API]
+endif::nav-workspaces-tasks-histories[]
 --

@@ -1,0 +1,24 @@
+[[integration-notes-0-2-18-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.18 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-06-06 22:20 KST
+|Added
+|`POST /v1/workspaces/{workspaceId}/tasks`
+|<<integration-note-0-2-18-volt-2026-06-06-2220-post-v1-workspaces-workspaceid-tasks-api,`POST /v1/workspaces/{workspaceId}/tasks` 워크스페이스 작업 생성 API가 추가되었습니다.>>
+
+|===
+
+include::../notes/0.2.18-volt/2026-06-06-2220-post-v1-workspaces-workspaceid-tasks-api.adoc[]
+
+++++
+</div>
+</details>
+++++

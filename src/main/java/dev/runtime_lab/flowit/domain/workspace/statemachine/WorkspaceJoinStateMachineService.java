@@ -22,8 +22,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class WorkspaceJoinStateMachineService {
 
-	private static final String STATE_MACHINE_ID = "workspace-join-request-%d";
-
 	private final StateMachineFactory<WorkspaceJoinRequestStatus, WorkspaceJoinRequestEvent> stateMachineFactory;
 
 	public void send(WorkspaceJoinRequest joinRequest, WorkspaceJoinRequestEvent event, User actor) {
@@ -76,6 +74,7 @@ public class WorkspaceJoinStateMachineService {
 			}
 
 			results.forEach(result -> result.complete().block());
+
 			throwStoredException(stateMachine);
 		} finally {
 			stateMachine.stopReactively().block();
@@ -105,6 +104,6 @@ public class WorkspaceJoinStateMachineService {
 	}
 
 	private String machineId(WorkspaceJoinRequest joinRequest) {
-		return STATE_MACHINE_ID.formatted(joinRequest.getId());
+		return WorkspaceJoinStateMachineIds.joinRequest(joinRequest.getId());
 	}
 }
