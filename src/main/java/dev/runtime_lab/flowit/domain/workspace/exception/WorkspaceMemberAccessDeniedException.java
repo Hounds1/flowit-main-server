@@ -5,7 +5,7 @@ import dev.runtime_lab.flowit.global.web.exception.ErrorCode;
 public class WorkspaceMemberAccessDeniedException extends WorkspaceException {
 
 	public WorkspaceMemberAccessDeniedException() {
-		super(ErrorCode.AUTH_403_001, "Workspace member removal is not allowed.");
+		super(ErrorCode.AUTH_403_001, "허가되지 않은 멤버 강제 퇴장입니다.");
 	}
 
 	public WorkspaceMemberAccessDeniedException(String message) {

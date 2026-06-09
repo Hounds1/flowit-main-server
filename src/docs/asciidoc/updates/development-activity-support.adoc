@@ -7,5 +7,4 @@ Development Activity Support
 Version Stage:: {api-version-stage} (pass:[<a href="version-policy.html">Version Policy</a>])
 API Status:: {api-version-stage-status}
 
-Docs:: API 섹션 구분을 구체적으로 변경했습니다.
-Docs:: 네비게이션 스크롤을 현재 문서의 위치로 보정하도록 개선했습니다.
+ETC:: 매일 더 나은 하루를 보냈기를 👍️

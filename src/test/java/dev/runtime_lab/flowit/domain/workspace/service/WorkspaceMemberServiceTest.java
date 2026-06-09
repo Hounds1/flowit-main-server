@@ -1,6 +1,11 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
 import dev.runtime_lab.flowit.domain.activity.service.internal.WorkspaceActivityRecorder;
+import dev.runtime_lab.flowit.domain.file.entity.FileMetadata;
+import dev.runtime_lab.flowit.domain.file.exception.ProfileImageNotFoundException;
+import dev.runtime_lab.flowit.domain.file.service.internal.ProfileImageFileService;
+import dev.runtime_lab.flowit.domain.file.storage.ProfileImageFileContent;
+import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
@@ -31,6 +36,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,6 +58,7 @@ class WorkspaceMemberServiceTest {
 	private final WorkspaceMemberWithdrawalHistoryRepository workspaceMemberWithdrawalHistoryRepository =
 		mock(WorkspaceMemberWithdrawalHistoryRepository.class);
 	private final WorkspaceActivityRecorder workspaceActivityRecorder = mock(WorkspaceActivityRecorder.class);
+	private final ProfileImageFileService profileImageFileService = mock(ProfileImageFileService.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1779889000L), ZoneOffset.UTC);
 	private final WorkspaceMemberService workspaceMemberService = new WorkspaceMemberService(
 		currentUserProvider,
@@ -61,6 +68,7 @@ class WorkspaceMemberServiceTest {
 		workspaceMemberRemovalHistoryRepository,
 		workspaceMemberWithdrawalHistoryRepository,
 		workspaceActivityRecorder,
+		profileImageFileService,
 		clock
 	);
 
@@ -147,6 +155,120 @@ class WorkspaceMemberServiceTest {
 		assertThrows(InvalidAuthenticatedUserException.class,
 			() -> workspaceMemberService.members(currentUser, 10L));
 		verify(workspaceRepository, never()).findActiveById(10L);
+	}
+
+	@Test
+	void getProfileImageReturnsTargetMemberProfileImageWhenRequesterIsMember() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User requester = activeUser(1L);
+		Workspace workspace = workspace(requester);
+		WorkspaceMember requesterMembership = workspaceMember(100L, workspace, requester, WorkspaceMemberRole.MEMBER);
+		FileMetadata profileImageFile = fileMetadata(3001L, "users/2/avatar.png");
+		User target = activeUser(2L, profileImageFile);
+		WorkspaceMember targetMembership = workspaceMember(200L, workspace, target, WorkspaceMemberRole.ADMIN);
+		byte[] bytes = new byte[] {1, 2, 3};
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(requester);
+		when(workspaceRepository.findActiveById(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.of(requesterMembership));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberId(10L, 200L))
+			.thenReturn(Optional.of(targetMembership));
+		when(profileImageFileService.load(profileImageFile)).thenReturn(new ProfileImageFileContent(bytes));
+
+		UserProfileImageContentResponse response = workspaceMemberService.getProfileImage(currentUser, 10L, 200L);
+
+		assertEquals("image/png", response.contentType());
+		assertEquals(3L, response.contentLength());
+		assertArrayEquals(bytes, response.bytes());
+		verify(profileImageFileService).load(profileImageFile);
+	}
+
+	@Test
+	void getProfileImageRejectsRequesterOutsideWorkspace() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User requester = activeUser(1L);
+		Workspace workspace = workspace(activeUser(2L));
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(requester);
+		when(workspaceRepository.findActiveById(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.empty());
+
+		assertThrows(
+			WorkspaceMemberAccessDeniedException.class,
+			() -> workspaceMemberService.getProfileImage(currentUser, 10L, 200L)
+		);
+		verify(workspaceMemberRepository, never()).findActiveByWorkspaceIdAndMemberId(10L, 200L);
+		verify(profileImageFileService, never()).load(any());
+	}
+
+	@Test
+	void getProfileImageRejectsMissingTargetMember() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User requester = activeUser(1L);
+		Workspace workspace = workspace(requester);
+		WorkspaceMember requesterMembership = workspaceMember(100L, workspace, requester, WorkspaceMemberRole.MEMBER);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(requester);
+		when(workspaceRepository.findActiveById(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.of(requesterMembership));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberId(10L, 200L))
+			.thenReturn(Optional.empty());
+
+		assertThrows(
+			WorkspaceMemberNotFoundException.class,
+			() -> workspaceMemberService.getProfileImage(currentUser, 10L, 200L)
+		);
+		verify(profileImageFileService, never()).load(any());
+	}
+
+	@Test
+	void getProfileImageRejectsTargetMemberWithoutProfileImage() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User requester = activeUser(1L);
+		Workspace workspace = workspace(requester);
+		WorkspaceMember requesterMembership = workspaceMember(100L, workspace, requester, WorkspaceMemberRole.MEMBER);
+		User target = activeUser(2L);
+		WorkspaceMember targetMembership = workspaceMember(200L, workspace, target, WorkspaceMemberRole.ADMIN);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(requester);
+		when(workspaceRepository.findActiveById(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.of(requesterMembership));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberId(10L, 200L))
+			.thenReturn(Optional.of(targetMembership));
+
+		assertThrows(
+			ProfileImageNotFoundException.class,
+			() -> workspaceMemberService.getProfileImage(currentUser, 10L, 200L)
+		);
+		verify(profileImageFileService, never()).load(any());
+	}
+
+	@Test
+	void getProfileImageRejectsTargetMemberWithDeletedProfileImage() {
+		CurrentUser currentUser = new CurrentUser(1L, "member@example.com", "member");
+		User requester = activeUser(1L);
+		Workspace workspace = workspace(requester);
+		WorkspaceMember requesterMembership = workspaceMember(100L, workspace, requester, WorkspaceMemberRole.MEMBER);
+		FileMetadata profileImageFile = fileMetadata(3001L, "users/2/avatar.png", 2L);
+		User target = activeUser(2L, profileImageFile);
+		WorkspaceMember targetMembership = workspaceMember(200L, workspace, target, WorkspaceMemberRole.ADMIN);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(requester);
+		when(workspaceRepository.findActiveById(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.of(requesterMembership));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberId(10L, 200L))
+			.thenReturn(Optional.of(targetMembership));
+
+		assertThrows(
+			ProfileImageNotFoundException.class,
+			() -> workspaceMemberService.getProfileImage(currentUser, 10L, 200L)
+		);
+		verify(profileImageFileService, never()).load(any());
 	}
 
 	@Test
@@ -637,13 +759,37 @@ class WorkspaceMemberServiceTest {
 	}
 
 	private User activeUser(Long id) {
+		return activeUser(id, null);
+	}
+
+	private User activeUser(Long id, FileMetadata profileImageFile) {
 		return User.builder()
 			.id(id)
 			.email("user%s@example.com".formatted(id))
 			.passwordHash("hash")
 			.name("user%s".formatted(id))
+			.profileImageFile(profileImageFile)
 			.createdAt(1L)
 			.updatedAt(1L)
+			.build();
+	}
+
+	private FileMetadata fileMetadata(Long id, String storageKey) {
+		return fileMetadata(id, storageKey, null);
+	}
+
+	private FileMetadata fileMetadata(Long id, String storageKey, Long deletedAt) {
+		return FileMetadata.builder()
+			.id(id)
+			.storageKey(storageKey)
+			.originalFilename("avatar.png")
+			.contentType("image/png")
+			.sizeBytes(68L)
+			.width(1)
+			.height(1)
+			.createdAt(1L)
+			.updatedAt(1L)
+			.deletedAt(deletedAt)
 			.build();
 	}
 

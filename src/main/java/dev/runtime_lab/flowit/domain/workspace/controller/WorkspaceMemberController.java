@@ -1,5 +1,6 @@
 package dev.runtime_lab.flowit.domain.workspace.controller;
 
+import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMembersResponse;
 import dev.runtime_lab.flowit.domain.workspace.service.WorkspaceMemberService;
@@ -8,6 +9,9 @@ import dev.runtime_lab.flowit.global.security.authentication.CurrentUser;
 import dev.runtime_lab.flowit.global.web.response.ApiEmptyData;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -29,6 +33,28 @@ public class WorkspaceMemberController {
 		@PathVariable Long workspaceId
 	) {
 		return workspaceMemberService.members(currentUser, workspaceId);
+	}
+
+	@GetMapping(
+		value = "/{memberId}/profile-image",
+		produces = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, MediaType.IMAGE_GIF_VALUE}
+	)
+	public ResponseEntity<byte[]> getProfileImage(
+		@AuthenticatedUser CurrentUser currentUser,
+		@PathVariable Long workspaceId,
+		@PathVariable Long memberId
+	) {
+		UserProfileImageContentResponse response = workspaceMemberService.getProfileImage(
+			currentUser,
+			workspaceId,
+			memberId
+		);
+
+		return ResponseEntity.ok()
+			.contentType(MediaType.parseMediaType(response.contentType()))
+			.contentLength(response.contentLength())
+			.cacheControl(CacheControl.noStore())
+			.body(response.bytes());
 	}
 
 	@PatchMapping("/{memberId}/role")

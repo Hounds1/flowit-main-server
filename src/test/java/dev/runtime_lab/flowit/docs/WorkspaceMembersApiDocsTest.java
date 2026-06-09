@@ -82,21 +82,24 @@ class WorkspaceMembersApiDocsTest {
 					"Owner",
 					"owner@example.com",
 					UserStatus.ACTIVE,
-					WorkspaceMemberRole.OWNER
+					WorkspaceMemberRole.OWNER,
+					"/v1/workspaces/2001/members/3001/profile-image"
 				),
 				new WorkspaceMemberResponse(
 					3002L,
 					"Admin",
 					"admin@example.com",
 					UserStatus.ACTIVE,
-					WorkspaceMemberRole.ADMIN
+					WorkspaceMemberRole.ADMIN,
+					"/v1/workspaces/2001/members/3002/profile-image"
 				),
 				new WorkspaceMemberResponse(
 					3003L,
 					"Member",
 					"member@example.com",
 					UserStatus.ACTIVE,
-					WorkspaceMemberRole.MEMBER
+					WorkspaceMemberRole.MEMBER,
+					"/v1/workspaces/2001/members/3003/profile-image"
 				)
 			)
 		);
@@ -133,6 +136,7 @@ class WorkspaceMembersApiDocsTest {
 					fieldWithPath("data.members[].email").type(JsonFieldType.STRING).description("멤버 이메일입니다."),
 					fieldWithPath("data.members[].status").type(JsonFieldType.STRING).description("멤버 사용자 상태입니다. link:enum-reference.html#user-status[UserStatus]를 참고합니다."),
 					fieldWithPath("data.members[].role").type(JsonFieldType.STRING).description("워크스페이스 멤버 역할입니다. link:enum-reference.html#workspace-member-role[WorkspaceMemberRole]을 참고합니다."),
+					fieldWithPath("data.members[].profileImageUrl").type(JsonFieldType.STRING).description("멤버 프로필 이미지 조회 URL입니다. 프로필 이미지가 없으면 ``null``입니다.").optional(),
 					fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 				)
 			));

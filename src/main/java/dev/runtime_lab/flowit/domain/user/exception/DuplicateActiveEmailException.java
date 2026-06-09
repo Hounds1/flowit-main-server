@@ -5,6 +5,6 @@ import dev.runtime_lab.flowit.global.web.exception.ErrorCode;
 public class DuplicateActiveEmailException extends UserException {
 
 	public DuplicateActiveEmailException(String email) {
-		super(ErrorCode.USER_409_001, "Active user email already exists: " + email);
+		super(ErrorCode.USER_409_001, "이미 가입된 이메일입니다.: " + email);
 	}
 }

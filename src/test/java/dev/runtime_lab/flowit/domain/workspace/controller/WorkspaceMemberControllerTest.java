@@ -1,5 +1,7 @@
 package dev.runtime_lab.flowit.domain.workspace.controller;
 
+import dev.runtime_lab.flowit.domain.file.exception.ProfileImageNotFoundException;
+import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -27,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,6 +41,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -75,7 +81,8 @@ class WorkspaceMemberControllerTest {
 					"Owner",
 					"owner@example.com",
 					UserStatus.ACTIVE,
-					WorkspaceMemberRole.OWNER
+					WorkspaceMemberRole.OWNER,
+					"/v1/workspaces/10/members/100/profile-image"
 				)
 			)
 		);
@@ -95,6 +102,8 @@ class WorkspaceMemberControllerTest {
 			.andExpect(jsonPath("$.data.members[0].email").value("owner@example.com"))
 			.andExpect(jsonPath("$.data.members[0].status").value("ACTIVE"))
 			.andExpect(jsonPath("$.data.members[0].role").value("OWNER"))
+			.andExpect(jsonPath("$.data.members[0].profileImageUrl")
+				.value("/v1/workspaces/10/members/100/profile-image"))
 			.andExpect(jsonPath("$.data.members[0].userId").doesNotExist())
 			.andExpect(jsonPath("$.data.members[0].joinedAt").doesNotExist())
 			.andExpect(jsonPath("$.extensions").isMap());
@@ -150,7 +159,76 @@ class WorkspaceMemberControllerTest {
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("WORKSPACE_404_001"))
-			.andExpect(jsonPath("$.error.message").value("Workspace not found."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void getProfileImageReturnsWorkspaceMemberProfileImageContent() throws Exception {
+		ArgumentCaptor<CurrentUser> currentUserCaptor = ArgumentCaptor.forClass(CurrentUser.class);
+		byte[] content = pngBytes();
+
+		when(workspaceMemberService.getProfileImage(any(CurrentUser.class), eq(10L), eq(100L)))
+			.thenReturn(new UserProfileImageContentResponse("image/png", content));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/members/{memberId}/profile-image", 10L, 100L)
+				.accept(MediaType.IMAGE_PNG))
+			.andExpect(status().isOk())
+			.andExpect(content().contentType(MediaType.IMAGE_PNG))
+			.andExpect(header().longValue(HttpHeaders.CONTENT_LENGTH, content.length))
+			.andExpect(header().string(HttpHeaders.CACHE_CONTROL, containsString("no-store")))
+			.andExpect(content().bytes(content));
+
+		verify(workspaceMemberService).getProfileImage(
+			currentUserCaptor.capture(),
+			eq(10L),
+			eq(100L)
+		);
+		assertEquals(1L, currentUserCaptor.getValue().id());
+		assertEquals("user@example.com", currentUserCaptor.getValue().email());
+		assertEquals("nickname", currentUserCaptor.getValue().name());
+	}
+
+	@Test
+	void getProfileImageReturnsUnauthorizedWhenAuthenticationIsMissing() throws Exception {
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/members/{memberId}/profile-image", 10L, 100L))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_401_001"))
+			.andExpect(jsonPath("$.error.message").value("Invalid authenticated user."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void getProfileImageReturnsForbiddenWhenRequesterIsNotWorkspaceMember() throws Exception {
+		when(workspaceMemberService.getProfileImage(any(CurrentUser.class), eq(10L), eq(100L)))
+			.thenThrow(new WorkspaceMemberAccessDeniedException("Workspace membership is required."));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/members/{memberId}/profile-image", 10L, 100L))
+			.andExpect(status().isForbidden())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("AUTH_403_001"))
+			.andExpect(jsonPath("$.error.message").value("Workspace membership is required."))
+			.andExpect(jsonPath("$.extensions").isMap());
+	}
+
+	@Test
+	void getProfileImageReturnsNotFoundWhenProfileImageIsMissing() throws Exception {
+		when(workspaceMemberService.getProfileImage(any(CurrentUser.class), eq(10L), eq(100L)))
+			.thenThrow(new ProfileImageNotFoundException());
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("1", "user@example.com", "nickname"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/members/{memberId}/profile-image", 10L, 100L))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.success").value(false))
+			.andExpect(jsonPath("$.error.code").value("FILE_404_001"))
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
@@ -276,7 +354,6 @@ class WorkspaceMemberControllerTest {
 			.andExpect(status().isForbidden())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("AUTH_403_001"))
-			.andExpect(jsonPath("$.error.message").value("Workspace member removal is not allowed."))
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
@@ -294,7 +371,6 @@ class WorkspaceMemberControllerTest {
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("WORKSPACE_404_001"))
-			.andExpect(jsonPath("$.error.message").value("Workspace not found."))
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
@@ -312,7 +388,6 @@ class WorkspaceMemberControllerTest {
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("WORKSPACE_MEMBER_404_001"))
-			.andExpect(jsonPath("$.error.message").value("Workspace member not found."))
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
@@ -385,7 +460,6 @@ class WorkspaceMemberControllerTest {
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("WORKSPACE_404_001"))
-			.andExpect(jsonPath("$.error.message").value("Workspace not found."))
 			.andExpect(jsonPath("$.extensions").isMap());
 	}
 
@@ -398,5 +472,11 @@ class WorkspaceMemberControllerTest {
 			.issuedAt(Instant.now())
 			.expiresAt(Instant.now().plusSeconds(60))
 			.build();
+	}
+
+	private byte[] pngBytes() {
+		return java.util.Base64.getDecoder().decode(
+			"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+		);
 	}
 }

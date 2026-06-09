@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.21-volt'
+version = '0.2.22-volt'
 
 java {
 	toolchain {
@@ -1239,6 +1239,12 @@ tasks.named('asciidoctor', AsciidoctorTask) {
 		from(apiDocsSourceDir) {
 			include 'css/**'
 			include 'js/**'
+		}
+		from(layout.projectDirectory.dir('src/main/resources/image')) {
+			into 'image'
+			include 'day.png'
+			include 'for-yours.png'
+			include 'night.png'
 		}
 	}
 }
