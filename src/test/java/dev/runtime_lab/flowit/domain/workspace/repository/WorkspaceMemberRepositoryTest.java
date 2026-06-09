@@ -5,6 +5,7 @@ import com.querydsl.core.types.Predicate;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.jpa.impl.JPAUpdateClause;
+import dev.runtime_lab.flowit.domain.file.entity.QFileMetadata;
 import dev.runtime_lab.flowit.domain.user.entity.QUser;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
@@ -161,15 +162,40 @@ class WorkspaceMemberRepositoryTest {
 	void findActiveMembersByWorkspaceIdReturnsSortedProjectedMembers() {
 		JPAQuery<WorkspaceMemberResponse> query = mock(JPAQuery.class);
 		List<WorkspaceMemberResponse> responses = List.of(
-			new WorkspaceMemberResponse(100L, "Owner", "owner@example.com", UserStatus.ACTIVE, WorkspaceMemberRole.OWNER),
-			new WorkspaceMemberResponse(101L, "Admin", "admin@example.com", UserStatus.ACTIVE, WorkspaceMemberRole.ADMIN),
-			new WorkspaceMemberResponse(102L, "Member", "member@example.com", UserStatus.ACTIVE, WorkspaceMemberRole.MEMBER)
+			new WorkspaceMemberResponse(
+				10L,
+				100L,
+				"Owner",
+				"owner@example.com",
+				UserStatus.ACTIVE,
+				WorkspaceMemberRole.OWNER,
+				3001L
+			),
+			new WorkspaceMemberResponse(
+				10L,
+				101L,
+				"Admin",
+				"admin@example.com",
+				UserStatus.ACTIVE,
+				WorkspaceMemberRole.ADMIN,
+				3002L
+			),
+			new WorkspaceMemberResponse(
+				10L,
+				102L,
+				"Member",
+				"member@example.com",
+				UserStatus.ACTIVE,
+				WorkspaceMemberRole.MEMBER,
+				null
+			)
 		);
 
 		when(queryFactory.select(org.mockito.ArgumentMatchers.<ConstructorExpression<WorkspaceMemberResponse>>any()))
 			.thenReturn(query);
 		when(query.from(QWorkspaceMember.workspaceMember)).thenReturn(query);
 		when(query.join(QWorkspaceMember.workspaceMember.user, QUser.user)).thenReturn(query);
+		when(query.leftJoin(QUser.user.profileImageFile, QFileMetadata.fileMetadata)).thenReturn(query);
 		when(query.where(any(Predicate.class), any(Predicate.class), any(Predicate.class))).thenReturn(query);
 		when(query.orderBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
 			.thenReturn(query);
@@ -181,6 +207,7 @@ class WorkspaceMemberRepositoryTest {
 		verify(queryFactory).select(org.mockito.ArgumentMatchers.<ConstructorExpression<WorkspaceMemberResponse>>any());
 		verify(query).from(QWorkspaceMember.workspaceMember);
 		verify(query).join(QWorkspaceMember.workspaceMember.user, QUser.user);
+		verify(query).leftJoin(QUser.user.profileImageFile, QFileMetadata.fileMetadata);
 		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
 		verify(query).orderBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
 		verify(query).fetch();

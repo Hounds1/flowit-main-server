@@ -1,4 +1,6 @@
 [.update-note-title]
 Integration Note
 
-Fix:: 작업 API 전역, 프로필 파일 API의 잘못된 날짜 타입을 수정했습니다.
+Added:: ``GET /v1/workspaces/{workspaceId}/members`` 응답에 ``data.members[].profileImageUrl`` 필드가 추가되었습니다.
+Added:: ``GET /v1/workspaces/{workspaceId}/members/{memberId}/profile-image`` 엔드포인트가 추가되었습니다.
+Additional:: ``profileImageUrl``은 서버가 제공하는 조회 URL입니다. 해당 엔드포인트에서 워크스페이스 멤버십 권한 검증과 파일 접근 제어를 수행합니다.

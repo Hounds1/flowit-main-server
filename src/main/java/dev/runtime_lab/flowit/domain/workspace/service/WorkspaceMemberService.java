@@ -1,7 +1,12 @@
 package dev.runtime_lab.flowit.domain.workspace.service;
 
 import dev.runtime_lab.flowit.domain.activity.service.internal.WorkspaceActivityRecorder;
+import dev.runtime_lab.flowit.domain.file.entity.FileMetadata;
+import dev.runtime_lab.flowit.domain.file.exception.ProfileImageNotFoundException;
+import dev.runtime_lab.flowit.domain.file.service.internal.ProfileImageFileService;
+import dev.runtime_lab.flowit.domain.file.storage.ProfileImageFileContent;
 import dev.runtime_lab.flowit.domain.user.entity.User;
+import dev.runtime_lab.flowit.domain.user.dto.UserProfileImageContentResponse;
 import dev.runtime_lab.flowit.domain.user.service.internal.CurrentUserProvider;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberRoleUpdateRequest;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
@@ -44,6 +49,7 @@ public class WorkspaceMemberService {
 	private final WorkspaceMemberRemovalHistoryRepository workspaceMemberRemovalHistoryRepository;
 	private final WorkspaceMemberWithdrawalHistoryRepository workspaceMemberWithdrawalHistoryRepository;
 	private final WorkspaceActivityRecorder workspaceActivityRecorder;
+	private final ProfileImageFileService profileImageFileService;
 	private final Clock clock;
 
 	@Transactional(readOnly = true)
@@ -58,6 +64,33 @@ public class WorkspaceMemberService {
 		List<WorkspaceMemberResponse> members = workspaceMemberRepository.findActiveMembersByWorkspaceId(workspace.getId());
 
 		return new WorkspaceMembersResponse(workspace.getInviteCode(), members);
+	}
+
+	@Transactional(readOnly = true)
+	public UserProfileImageContentResponse getProfileImage(
+		CurrentUser currentUser,
+		Long workspaceId,
+		Long memberId
+	) {
+		User requester = currentUserProvider.findActive(currentUser);
+		Workspace workspace = workspaceRepository.findActiveById(workspaceId)
+			.orElseThrow(WorkspaceNotFoundException::new);
+
+		workspaceMemberRepository.findActiveByWorkspaceIdAndUserId(workspace.getId(), requester.getId())
+			.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(MEMBERSHIP_REQUIRED));
+
+		WorkspaceMember targetMembership = workspaceMemberRepository
+			.findActiveByWorkspaceIdAndMemberId(workspace.getId(), memberId)
+			.orElseThrow(WorkspaceMemberNotFoundException::new);
+
+		FileMetadata profileImageFile = targetMembership.getUser().getProfileImageFile();
+		if (profileImageFile == null || profileImageFile.getDeletedAt() != null) {
+			throw new ProfileImageNotFoundException();
+		}
+
+		ProfileImageFileContent content = profileImageFileService.load(profileImageFile);
+
+		return new UserProfileImageContentResponse(profileImageFile.getContentType(), content.bytes());
 	}
 
 	@Transactional

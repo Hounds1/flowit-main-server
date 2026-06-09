@@ -248,7 +248,7 @@ public class TaskService {
 		}
 
 		return workspaceAccessService.findActiveMember(workspaceId, assigneeMemberId)
-			.orElseThrow(() -> new InvalidTaskRequestException("Task assignee must be an active workspace member."));
+			.orElseThrow(() -> new InvalidTaskRequestException("작업은 활성 멤버에게만 할당될 수 있습니다."));
 	}
 
 	private Task findTaskForUpdate(Long workspaceId, Long taskId) {
@@ -356,7 +356,7 @@ public class TaskService {
 		}
 
 		if (tagsByNormalizedName.size() > TAG_MAX_COUNT) {
-			throw new InvalidTaskRequestException("Task tags must not exceed 10.");
+			throw new InvalidTaskRequestException("작업의 태그는 10개를 넘을 수 없습니다.");
 		}
 
 		return List.copyOf(tagsByNormalizedName.values());
@@ -364,17 +364,17 @@ public class TaskService {
 
 	private String normalizeDisplayTag(String rawTag) {
 		if (rawTag == null) {
-			throw new InvalidTaskRequestException("Task tag must not be null.");
+			throw new InvalidTaskRequestException("작업의 태그는 null일 수 없습니다.");
 		}
 
 		String normalized = Normalizer.normalize(rawTag.trim(), Normalizer.Form.NFC);
 
 		if (normalized.isBlank()) {
-			throw new InvalidTaskRequestException("Task tag must not be blank.");
+			throw new InvalidTaskRequestException("작업의 태그는 빈 값일 수 없습니다.");
 		}
 
 		if (normalized.length() > TAG_MAX_LENGTH) {
-			throw new InvalidTaskRequestException("Task tag must not exceed 30 characters.");
+			throw new InvalidTaskRequestException("작업의 태그는 30자를 넘을 수 없습니다.");
 		}
 
 		return normalized;

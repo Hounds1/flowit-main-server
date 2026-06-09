@@ -5,6 +5,7 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import dev.runtime_lab.flowit.domain.file.entity.QFileMetadata;
 import dev.runtime_lab.flowit.domain.user.entity.QUser;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
@@ -77,14 +78,16 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 
 	public Optional<WorkspaceMember> findActiveByWorkspaceIdAndMemberId(Long workspaceId, Long memberId) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QUser user = QUser.user;
 
 		return Optional.ofNullable(
 			queryFactory.selectFrom(workspaceMember)
-				.join(workspaceMember.user, QUser.user).fetchJoin()
+				.join(workspaceMember.user, user).fetchJoin()
 				.where(
 					workspaceMember.workspace.id.eq(workspaceId),
 					workspaceMember.id.eq(memberId),
-					workspaceMember.deletedAt.isNull()
+					workspaceMember.deletedAt.isNull(),
+					user.deletedAt.isNull()
 				)
 				.fetchOne()
 		);
@@ -107,6 +110,7 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 	public List<WorkspaceMemberResponse> findActiveMembersByWorkspaceId(Long workspaceId) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
 		QUser user = QUser.user;
+		QFileMetadata profileImageFile = QFileMetadata.fileMetadata;
 		NumberExpression<Integer> roleOrder = new CaseBuilder()
 			.when(workspaceMember.role.eq(WorkspaceMemberRole.OWNER)).then(0)
 			.when(workspaceMember.role.eq(WorkspaceMemberRole.ADMIN)).then(1)
@@ -114,14 +118,17 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 
 		return queryFactory.select(Projections.constructor(
 				WorkspaceMemberResponse.class,
+				workspaceMember.workspace.id,
 				workspaceMember.id,
 				user.name,
 				user.email,
 				user.status,
-				workspaceMember.role
+				workspaceMember.role,
+				profileImageFile.id
 			))
 			.from(workspaceMember)
 			.join(workspaceMember.user, user)
+			.leftJoin(user.profileImageFile, profileImageFile)
 			.where(
 				workspaceMember.workspace.id.eq(workspaceId),
 				workspaceMember.deletedAt.isNull(),
