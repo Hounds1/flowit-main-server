@@ -7,4 +7,5 @@ Development Activity Support
 Version Stage:: {api-version-stage} (pass:[<a href="version-policy.html">Version Policy</a>])
 API Status:: {api-version-stage-status}
 
-ETC:: 매일 더 나은 하루를 보냈기를 👍️
+Docs:: Request 설명부에 각 필드의 타입을 추가했습니다.
+Etc:: 매일 더 나은 하루를 보냈기를 👍️

@@ -1,0 +1,32 @@
+// integration-note-source-sha256: c40e3f0391ca4c642997a77f8b0c48e91f78a7dd67071a3d140b966ab817b52f
+// integration-note-version: 0.2.23-volt
+// integration-note-time: 2026-06-10-2310
+// integration-note-time-human: 2026-06-10 23:10 KST
+// integration-note-impact: Empty
+// integration-note-target: `GET /v1/workspaces/{workspaceId}/members`
+// integration-note-summary: API 변경이 없습니다.
+// integration-note-anchor: integration-note-0-2-23-volt-2026-06-10-2310-api
+
+[#integration-note-0-2-23-volt-2026-06-10-2310-api]
+=== API 변경이 없습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.23-volt`
+|Archived At |2026-06-10 23:10 KST
+|Impact |Empty
+|Target |`GET /v1/workspaces/{workspaceId}/members`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Empty:: API 변경이 없습니다.
+Carryover:: ``GET /v1/workspaces/{workspaceId}/members`` 응답에 ``data.members[].profileImageUrl`` 필드가 추가되었습니다.
+Carryover:: ``GET /v1/workspaces/{workspaceId}/members/{memberId}/profile-image`` 엔드포인트가 추가되었습니다.
+Carryover:: ``profileImageUrl``은 서버가 제공하는 조회 URL입니다. 해당 엔드포인트에서 워크스페이스 멤버십 권한 검증과 파일 접근 제어를 수행합니다.
+--

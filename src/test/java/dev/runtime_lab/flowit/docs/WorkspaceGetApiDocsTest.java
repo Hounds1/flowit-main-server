@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static dev.runtime_lab.flowit.docs.support.ResponseFieldStability.experimental;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -39,7 +40,6 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -93,7 +93,7 @@ class WorkspaceGetApiDocsTest {
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("workspaceId").description("조회할 워크스페이스 식별자입니다.")
+					numberParameter("workspaceId").description("조회할 워크스페이스 식별자입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. ``Bearer {token}`` 형식으로 전달합니다."),

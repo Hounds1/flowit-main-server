@@ -1,5 +1,7 @@
 package dev.runtime_lab.flowit.docs;
 
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.booleanParameter;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
@@ -11,7 +13,6 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -57,10 +58,10 @@ class DocsPreviewControllerTest {
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("projectId").description("작업이 속한 프로젝트 식별자입니다.")
+					numberParameter("projectId").description("작업이 속한 프로젝트 식별자입니다.")
 				),
 				queryParameters(
-					parameterWithName("notify").description("작업 알림 발송 여부입니다.")
+					booleanParameter("notify").description("작업 알림 발송 여부입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.CONTENT_TYPE).description("요청 본문의 미디어 타입입니다."),
