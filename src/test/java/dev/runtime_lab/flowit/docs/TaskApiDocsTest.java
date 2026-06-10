@@ -45,6 +45,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.stringArrayElements;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.stringParameter;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
@@ -59,7 +62,6 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -173,14 +175,14 @@ class TaskApiDocsTest {
 				workspacePathParameters("작업 목록을 조회할 워크스페이스 식별자입니다."),
 				authRequestHeaders(),
 				queryParameters(
-					parameterWithName("status").description("작업 상태 필터입니다. link:enum-reference.html#task-status[TaskStatus]를 참고합니다.").optional(),
-					parameterWithName("assigneeMemberId").description("담당 워크스페이스 멤버 식별자 필터입니다. 미할당 작업만 조회하는 필터는 아직 제공하지 않습니다.").optional(),
-					parameterWithName("tag").description("태그 이름 필터입니다. 서버는 정규화된 태그 이름으로 검색합니다.").optional(),
-					parameterWithName("keyword").description("작업 제목/설명 검색 키워드입니다.").optional(),
-					parameterWithName("dueFrom").description("마감 예정일 검색 시작 시각입니다. Unix epoch seconds 기준입니다.").optional(),
-					parameterWithName("dueTo").description("마감 예정일 검색 종료 시각입니다. Unix epoch seconds 기준입니다.").optional(),
-					parameterWithName("page").description("0부터 시작하는 페이지 번호입니다. 생략 시 서버 기본값을 사용합니다.").optional(),
-					parameterWithName("size").description("페이지 크기입니다. 생략 시 서버 기본값을 사용합니다.").optional()
+					stringParameter("status").description("작업 상태 필터입니다. link:enum-reference.html#task-status[TaskStatus]를 참고합니다.").optional(),
+					numberParameter("assigneeMemberId").description("담당 워크스페이스 멤버 식별자 필터입니다. 미할당 작업만 조회하는 필터는 아직 제공하지 않습니다.").optional(),
+					stringParameter("tag").description("태그 이름 필터입니다. 서버는 정규화된 태그 이름으로 검색합니다.").optional(),
+					stringParameter("keyword").description("작업 제목/설명 검색 키워드입니다.").optional(),
+					numberParameter("dueFrom").description("마감 예정일 검색 시작 시각입니다. Unix epoch seconds 기준입니다.").optional(),
+					numberParameter("dueTo").description("마감 예정일 검색 종료 시각입니다. Unix epoch seconds 기준입니다.").optional(),
+					numberParameter("page").description("0부터 시작하는 페이지 번호입니다. 생략 시 서버 기본값을 사용합니다.").optional(),
+					numberParameter("size").description("페이지 크기입니다. 생략 시 서버 기본값을 사용합니다.").optional()
 				),
 				responseHeaders(contentTypeResponseHeader()),
 				responseFields(taskListResponseFields())
@@ -311,8 +313,8 @@ class TaskApiDocsTest {
 				taskPathParameters("작업 이력을 조회할 워크스페이스 식별자입니다.", "이력을 조회할 작업 식별자입니다."),
 				authRequestHeaders(),
 				queryParameters(
-					parameterWithName("page").description("0부터 시작하는 페이지 번호입니다. 생략 시 서버 기본값을 사용합니다.").optional(),
-					parameterWithName("size").description("페이지 크기입니다. 생략 시 서버 기본값을 사용합니다.").optional()
+					numberParameter("page").description("0부터 시작하는 페이지 번호입니다. 생략 시 서버 기본값을 사용합니다.").optional(),
+					numberParameter("size").description("페이지 크기입니다. 생략 시 서버 기본값을 사용합니다.").optional()
 				),
 				responseHeaders(contentTypeResponseHeader()),
 				responseFields(taskHistoryListResponseFields())
@@ -326,13 +328,13 @@ class TaskApiDocsTest {
 	}
 
 	private org.springframework.restdocs.snippet.Snippet workspacePathParameters(String workspaceDescription) {
-		return pathParameters(parameterWithName("workspaceId").description(workspaceDescription));
+		return pathParameters(numberParameter("workspaceId").description(workspaceDescription));
 	}
 
 	private org.springframework.restdocs.snippet.Snippet taskPathParameters(String workspaceDescription, String taskDescription) {
 		return pathParameters(
-			parameterWithName("workspaceId").description(workspaceDescription),
-			parameterWithName("taskId").description(taskDescription)
+			numberParameter("workspaceId").description(workspaceDescription),
+			numberParameter("taskId").description(taskDescription)
 		);
 	}
 
@@ -357,7 +359,7 @@ class TaskApiDocsTest {
 			fieldWithPath("priority").type(JsonFieldType.STRING).description("작업 우선순위입니다. link:enum-reference.html#task-priority[TaskPriority]를 참고합니다."),
 			fieldWithPath("startDate").type(JsonFieldType.NUMBER).description("작업 시작 예정 시각입니다. Unix epoch seconds 기준입니다.").optional(),
 			fieldWithPath("dueDate").type(JsonFieldType.NUMBER).description("작업 마감 예정 시각입니다. Unix epoch seconds 기준입니다.").optional(),
-			fieldWithPath("tags").type(JsonFieldType.ARRAY).description("작업 태그 목록입니다. 최대 10개까지 허용하며 동일 작업 안에서 같은 태그는 정규화 이름 기준으로 중복 제거됩니다.").optional()
+			fieldWithPath("tags").type(JsonFieldType.ARRAY).description("작업 태그 목록입니다. 최대 10개까지 허용하며 동일 작업 안에서 같은 태그는 정규화 이름 기준으로 중복 제거됩니다.").attributes(stringArrayElements()).optional()
 		};
 	}
 

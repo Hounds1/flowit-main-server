@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.mockito.Mockito.mock;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
@@ -35,7 +36,6 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,8 +78,8 @@ class WorkspaceMemberRemoveApiDocsTest {
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("workspaceId").description("멤버를 강제 퇴장시킬 워크스페이스 식별자입니다."),
-					parameterWithName("memberId").description("강제 퇴장 대상 워크스페이스 멤버 식별자입니다.")
+					numberParameter("workspaceId").description("멤버를 강제 퇴장시킬 워크스페이스 식별자입니다."),
+					numberParameter("memberId").description("강제 퇴장 대상 워크스페이스 멤버 식별자입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. ``Bearer {token}`` 형식으로 전달합니다."),

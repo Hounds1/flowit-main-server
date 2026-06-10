@@ -39,6 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static dev.runtime_lab.flowit.docs.support.ResponseFieldStability.experimental;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.filePart;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -54,7 +55,6 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.partWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParts;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -128,7 +128,7 @@ class UserProfileImageApiDocsTest {
 					headerWithName(HttpHeaders.ACCEPT).description("클라이언트가 기대하는 응답 미디어 타입입니다.").optional()
 				),
 				requestParts(
-					partWithName("file").description("교체할 프로필 이미지 파일입니다. ``image/jpeg``, ``image/png``, ``image/gif``를 지원합니다.")
+					filePart("file").description("교체할 프로필 이미지 파일입니다. ``image/jpeg``, ``image/png``, ``image/gif``를 지원합니다.")
 				),
 				responseFields(
 					fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 처리 성공 여부입니다."),

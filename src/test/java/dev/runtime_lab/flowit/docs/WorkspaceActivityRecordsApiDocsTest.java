@@ -39,6 +39,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.stringParameter;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
@@ -50,7 +52,6 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -111,15 +112,15 @@ class WorkspaceActivityRecordsApiDocsTest {
 				preprocessRequest(prettyPrint()),
 				preprocessResponse(prettyPrint()),
 				pathParameters(
-					parameterWithName("workspaceId").description("최근 활동을 조회할 워크스페이스 식별자입니다.")
+					numberParameter("workspaceId").description("최근 활동을 조회할 워크스페이스 식별자입니다.")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.AUTHORIZATION).description("JWT access token입니다. `Bearer {token}` 형식으로 전달합니다."),
 					headerWithName(HttpHeaders.ACCEPT).description("클라이언트가 기대하는 응답 미디어 타입입니다.").optional()
 				),
 				queryParameters(
-					parameterWithName("topic").description("활동 조회 주제입니다. 생략하면 `ALL`입니다. link:enum-reference.html#activity-record-topic[ActivityRecordTopic]을 참고합니다.").optional(),
-					parameterWithName("rangeDays").description("오늘부터 N일 전까지의 활동 범위입니다. 생략하면 5일입니다.").optional()
+					stringParameter("topic").description("활동 조회 주제입니다. 생략하면 `ALL`입니다. link:enum-reference.html#activity-record-topic[ActivityRecordTopic]을 참고합니다.").optional(),
+					numberParameter("rangeDays").description("오늘부터 N일 전까지의 활동 범위입니다. 생략하면 5일입니다.").optional()
 				),
 				responseHeaders(
 					headerWithName(HttpHeaders.CONTENT_TYPE).description("응답 본문 미디어 타입입니다.")
