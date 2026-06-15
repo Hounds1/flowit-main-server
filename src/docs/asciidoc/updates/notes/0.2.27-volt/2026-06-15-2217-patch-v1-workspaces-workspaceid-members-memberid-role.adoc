@@ -1,3 +1,27 @@
+// integration-note-source-sha256: 7296773df459c8d34029be40961cf4a9d833a41e7d165264448b3170b56acc14
+// integration-note-version: 0.2.27-volt
+// integration-note-time: 2026-06-15-2217
+// integration-note-time-human: 2026-06-15 22:17 KST
+// integration-note-impact: Patch
+// integration-note-target: `PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+// integration-note-summary: `PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role` 엔드포인트의 제약 사항을 완화했습니다.
+// integration-note-anchor: integration-note-0-2-27-volt-2026-06-15-2217-patch-v1-workspaces-workspaceid-members-memberid-role
+
+[#integration-note-0-2-27-volt-2026-06-15-2217-patch-v1-workspaces-workspaceid-members-memberid-role]
+=== `PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role` 엔드포인트의 제약 사항을 완화했습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.27-volt`
+|Archived At |2026-06-15 22:17 KST
+|Impact |Patch
+|Target |`PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
 [.update-note-title]
 Integration Note
 
@@ -22,3 +46,4 @@ Carryover:: 일부 작업 관련 문서의 명칭을 변경했습니다.
 +
 * ``작업 수정 API`` -> ``작업 전체 수정 API``
 * ``작업 진행도 수정 API`` -> ``작업 진행도 변경 API``
+--

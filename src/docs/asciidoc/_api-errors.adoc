@@ -106,7 +106,7 @@ endif::api-error-workspace-removal-denied[]
 ifdef::api-error-workspace-withdrawal-denied[]
 |``403 Forbidden``
 |``AUTH_403_001``
-|요청 사용자가 해당 워크스페이스의 활성 멤버가 아니거나, OWNER 탈퇴 시 소유권을 이전받을 ADMIN 멤버가 없습니다.
+|요청 사용자가 해당 워크스페이스의 활성 멤버가 아니거나, 마지막 OWNER 탈퇴 시 소유권을 이전받을 ADMIN 멤버가 없습니다.
 endif::api-error-workspace-withdrawal-denied[]
 
 ifdef::api-error-workspace-not-found[]
