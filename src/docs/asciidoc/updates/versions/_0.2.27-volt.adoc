@@ -1,0 +1,24 @@
+[[integration-notes-0-2-27-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.27 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-06-15 22:17 KST
+|Patch
+|`PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`
+|<<integration-note-0-2-27-volt-2026-06-15-2217-patch-v1-workspaces-workspaceid-members-memberid-role,`PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role` 엔드포인트의 제약 사항을 완화했습니다.>>
+
+|===
+
+include::../notes/0.2.27-volt/2026-06-15-2217-patch-v1-workspaces-workspaceid-members-memberid-role.adoc[]
+
+++++
+</div>
+</details>
+++++

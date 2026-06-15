@@ -645,6 +645,7 @@ class WorkspaceMemberServiceTest {
 
 		assertEquals(1779889000L, memberMembership.getDeletedAt());
 		assertEquals(1779889000L, memberMembership.getUpdatedAt());
+		verify(workspaceMemberRepository, never()).countActiveOwnersByWorkspaceId(10L);
 		verify(workspaceMemberRepository, never()).findOldestActiveAdminMemberIdByWorkspaceId(10L);
 		verify(workspaceMemberWithdrawalHistoryRepository).save(historyCaptor.capture());
 		WorkspaceMemberWithdrawalHistory history = historyCaptor.getValue();
@@ -658,7 +659,41 @@ class WorkspaceMemberServiceTest {
 	}
 
 	@Test
-	void withdrawAllowsOwnerToWithdrawAndPromotesOldestAdmin() {
+	void withdrawAllowsOwnerToWithdrawWithoutPromotingAdminWhenAnotherOwnerExists() {
+		CurrentUser currentUser = new CurrentUser(1L, "owner@example.com", "owner");
+		User owner = activeUser(1L);
+		Workspace workspace = workspace(owner);
+		WorkspaceMember ownerMembership = workspaceMember(100L, workspace, owner, WorkspaceMemberRole.OWNER);
+		ArgumentCaptor<WorkspaceMemberWithdrawalHistory> withdrawalHistoryCaptor =
+			ArgumentCaptor.forClass(WorkspaceMemberWithdrawalHistory.class);
+
+		when(currentUserProvider.findActive(currentUser)).thenReturn(owner);
+		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
+		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
+			.thenReturn(Optional.of(ownerMembership));
+		when(workspaceMemberRepository.countActiveOwnersByWorkspaceId(10L)).thenReturn(2L);
+
+		workspaceMemberService.withdraw(currentUser, 10L);
+
+		assertEquals(1779889000L, ownerMembership.getDeletedAt());
+		assertEquals(1779889000L, ownerMembership.getUpdatedAt());
+		verify(workspaceMemberRepository, never()).findOldestActiveAdminMemberIdByWorkspaceId(10L);
+		verify(workspaceMemberRepository, never()).flush();
+		verify(workspaceMemberRoleHistoryRepository, never()).save(any(WorkspaceMemberRoleHistory.class));
+
+		verify(workspaceMemberWithdrawalHistoryRepository).save(withdrawalHistoryCaptor.capture());
+		WorkspaceMemberWithdrawalHistory withdrawalHistory = withdrawalHistoryCaptor.getValue();
+		assertEquals(workspace, withdrawalHistory.getWorkspace());
+		assertEquals(ownerMembership, withdrawalHistory.getWorkspaceMember());
+		assertEquals(owner, withdrawalHistory.getUser());
+		assertEquals(WorkspaceMemberRole.OWNER, withdrawalHistory.getRoleSnapshot());
+		assertNull(withdrawalHistory.getOwnershipTransferredToWorkspaceMember());
+		assertNull(withdrawalHistory.getOwnershipTransferredToUser());
+		assertEquals(1779889000L, withdrawalHistory.getWithdrawnAt());
+	}
+
+	@Test
+	void withdrawAllowsOnlyOwnerToWithdrawAndPromotesOldestAdmin() {
 		CurrentUser currentUser = new CurrentUser(1L, "owner@example.com", "owner");
 		User owner = activeUser(1L);
 		User admin = activeUser(2L);
@@ -674,6 +709,7 @@ class WorkspaceMemberServiceTest {
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
 		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
 			.thenReturn(Optional.of(ownerMembership));
+		when(workspaceMemberRepository.countActiveOwnersByWorkspaceId(10L)).thenReturn(1L);
 		when(workspaceMemberRepository.findOldestActiveAdminMemberIdByWorkspaceId(10L))
 			.thenReturn(Optional.of(200L));
 		when(workspaceMemberRepository.findActiveByWorkspaceIdAndMemberIdForUpdate(10L, 200L))
@@ -718,6 +754,7 @@ class WorkspaceMemberServiceTest {
 		when(workspaceRepository.findActiveByIdForUpdate(10L)).thenReturn(Optional.of(workspace));
 		when(workspaceMemberRepository.findActiveByWorkspaceIdAndUserIdForUpdate(10L, 1L))
 			.thenReturn(Optional.of(ownerMembership));
+		when(workspaceMemberRepository.countActiveOwnersByWorkspaceId(10L)).thenReturn(1L);
 		when(workspaceMemberRepository.findOldestActiveAdminMemberIdByWorkspaceId(10L))
 			.thenReturn(Optional.empty());
 

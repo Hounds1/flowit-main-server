@@ -224,13 +224,16 @@ public class WorkspaceMemberService {
 		WorkspaceMember ownershipTransferredTo = null;
 
 		if (roleSnapshot.isWorkspaceOwner()) {
-			ownershipTransferredTo = workspaceMemberRepository
-				.findOldestActiveAdminMemberIdByWorkspaceId(workspace.getId())
-				.flatMap(memberId -> workspaceMemberRepository
-					.findActiveByWorkspaceIdAndMemberIdForUpdate(workspace.getId(), memberId))
-				.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED));
-			if (!ownershipTransferredTo.getRole().isWorkspaceAdmin()) {
-				throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED);
+			long ownerCount = workspaceMemberRepository.countActiveOwnersByWorkspaceId(workspace.getId());
+			if (ownerCount <= 1L) {
+				ownershipTransferredTo = workspaceMemberRepository
+					.findOldestActiveAdminMemberIdByWorkspaceId(workspace.getId())
+					.flatMap(memberId -> workspaceMemberRepository
+						.findActiveByWorkspaceIdAndMemberIdForUpdate(workspace.getId(), memberId))
+					.orElseThrow(() -> new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED));
+				if (!ownershipTransferredTo.getRole().isWorkspaceAdmin()) {
+					throw new WorkspaceMemberAccessDeniedException(OWNER_REQUIRED);
+				}
 			}
 		}
 
