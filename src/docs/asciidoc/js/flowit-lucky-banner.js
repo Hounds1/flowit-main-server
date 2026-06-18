@@ -1,5 +1,5 @@
 (function () {
-  var SHOW_PROBABILITY = 0.5;
+  var SHOW_PROBABILITY = 0.05;
   var SHOWN_DATE_STORAGE_KEY = "flowitLuckyBannerShownDate";
   var DAY_IMAGE_SRC = "image/day.png";
   var NIGHT_IMAGE_SRC = "image/night.png";

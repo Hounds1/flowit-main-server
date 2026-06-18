@@ -14,7 +14,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.29-volt'
+version = '0.2.30-volt'
 
 java {
 	toolchain {
@@ -832,6 +832,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework.security:spring-security-messaging'
 	implementation 'org.springframework.statemachine:spring-statemachine-starter'
 	implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
 	implementation 'org.flywaydb:flyway-mysql'

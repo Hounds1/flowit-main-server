@@ -1,21 +1,8 @@
 [.update-note-title]
 Integration Note
 
-Changed:: ``작업`` 엔티티의 상태 일부를 수정했습니다.
+Empty:: API 변경이 없습니다.
+Carryover:: ``작업`` 엔티티의 상태 일부를 수정했습니다.
 +
 * 기존 미시작 작업 상태 상수를 ``TODO``로 변경했습니다.
 * 작업 문서 전역의 미시작 작업 상태 표기를 ``TODO``로 변경했습니다.
-Carryover:: ``PATCH /v1/workspaces/{workspaceId}/members/{memberId}/role`` 엔드포인트의 제약 사항을 완화했습니다.
-+
-* 이제 워크스페이스는 여러 명의 ``OWNER``가 공존할 수 있습니다.
-* 각 ``OWNER``는 다른 ``OWNER``의 권한을 변경할 수 있습니다.
-Carryover:: ``PATCH /v1/workspaces/{workspaceId}/members/withdraw`` 엔드포인트의 동작을 일부 변경했습니다.
-+
-* 이제 ``OWNER``는 다른 ``OWNER``가 존재하는 경우 자유롭게 탈퇴할 수 있습니다.
-* ``ADMIN``이 존재하는 경우 발생하는 ``OWNER``의 승계 구도는 계속해서 유지됩니다.
-* 마지막 ``OWNER``의 탈퇴는 계속해서 거부됩니다.
-Carryover:: 변경에 따라 각 API 문서의 설명이 소폭 수정되었습니다.
-+
-* 권한 변경 API 문서에 제약 사항을 더 상세히 기술했습니다.
-* 멤버 탈퇴 API 문서에 다중 ``OWNER`` 개편으로 인한 제약 변경을 반영했습니다.
-Carryover:: 이번 변경은 기존 계약이 깨지는 변경이 아닌 동작 구조 변경입니다.

@@ -1,0 +1,33 @@
+// integration-note-source-sha256: d6cfdd1f6aeabba858f1e08e643d0e5dd4cc70f4f80dc9cd95d47ce113943b06
+// integration-note-version: 0.2.30-volt
+// integration-note-time: 2026-06-18-2340
+// integration-note-time-human: 2026-06-18 23:40 KST
+// integration-note-impact: Empty
+// integration-note-target: `updates/latest.adoc`
+// integration-note-summary: API 변경이 없습니다.
+// integration-note-anchor: integration-note-0-2-30-volt-2026-06-18-2340-api
+
+[#integration-note-0-2-30-volt-2026-06-18-2340-api]
+=== API 변경이 없습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.30-volt`
+|Archived At |2026-06-18 23:40 KST
+|Impact |Empty
+|Target |`updates/latest.adoc`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Empty:: API 변경이 없습니다.
+Carryover:: ``작업`` 엔티티의 상태 일부를 수정했습니다.
++
+* 기존 미시작 작업 상태 상수를 ``TODO``로 변경했습니다.
+* 작업 문서 전역의 미시작 작업 상태 표기를 ``TODO``로 변경했습니다.
+--
