@@ -21,62 +21,64 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
-	private static final String[] PUBLIC_ENDPOINTS = {
-		"/actuator/health",
-		"/actuator/prometheus",
-		"/api/docs-preview/**",
-		"/docs",
-		"/docs/**",
-		"/v1/public/auth/login",
-		"/v1/public/auth/logout",
-		"/v1/public/auth/refresh",
-		"/v1/public/users/join"
-	};
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/actuator/health",
+            "/actuator/prometheus",
+            "/api/docs-preview/**",
+            "/docs",
+            "/docs/**",
+            "/v1/public/auth/login",
+            "/v1/public/auth/logout",
+            "/v1/public/auth/refresh",
+            "/v1/public/users/join",
+            "/ws",
+            "/ws/**"
+    };
 
-	@Bean
-	public SecurityFilterChain securityFilterChain(
-		HttpSecurity http,
-		AuthenticationEntryPoint authenticationEntryPoint,
-		AccessDeniedHandler accessDeniedHandler,
-		CorsConfigurationSource corsConfigurationSource
-	) throws Exception {
-		return http
-			.cors(cors -> cors.configurationSource(corsConfigurationSource))
-			.csrf(AbstractHttpConfigurer::disable)
-			.formLogin(AbstractHttpConfigurer::disable)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.logout(AbstractHttpConfigurer::disable)
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(exception -> exception
-				.authenticationEntryPoint(authenticationEntryPoint)
-				.accessDeniedHandler(accessDeniedHandler)
-			)
-			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-				.anyRequest().authenticated()
-			)
-			.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-			.build();
-	}
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler,
+            CorsConfigurationSource corsConfigurationSource
+    ) throws Exception {
+        return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .build();
+    }
 
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(corsProperties.allowedOrigins());
-		configuration.setAllowedMethods(corsProperties.allowedMethods());
-		configuration.setAllowedHeaders(corsProperties.allowedHeaders());
-		configuration.setExposedHeaders(corsProperties.exposedHeaders());
-		configuration.setAllowCredentials(corsProperties.allowCredentials());
-		configuration.setMaxAge(corsProperties.maxAge().getSeconds());
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(corsProperties.allowedOrigins());
+        configuration.setAllowedMethods(corsProperties.allowedMethods());
+        configuration.setAllowedHeaders(corsProperties.allowedHeaders());
+        configuration.setExposedHeaders(corsProperties.exposedHeaders());
+        configuration.setAllowCredentials(corsProperties.allowCredentials());
+        configuration.setMaxAge(corsProperties.maxAge().getSeconds());
 
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
 
-		return source;
-	}
+        return source;
+    }
 
-	@Bean
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }
