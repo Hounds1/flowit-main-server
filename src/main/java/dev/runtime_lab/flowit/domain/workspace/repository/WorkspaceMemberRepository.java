@@ -11,6 +11,7 @@ import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMember;
+import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMemberRoleHistory;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
@@ -138,6 +139,37 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 			.fetch();
 	}
 
+	public List<Long> findActiveUserIdsByWorkspaceId(Long workspaceId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QUser user = QUser.user;
+
+		return queryFactory.select(user.id)
+			.from(workspaceMember)
+			.join(workspaceMember.user, user)
+			.where(
+				workspaceMember.workspace.id.eq(workspaceId),
+				workspaceMember.deletedAt.isNull(),
+				user.deletedAt.isNull()
+			)
+			.orderBy(user.id.asc())
+			.fetch();
+	}
+
+	public Optional<Long> findUserIdByWorkspaceIdAndMemberId(Long workspaceId, Long memberId) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QUser user = QUser.user;
+
+		return Optional.ofNullable(queryFactory.select(user.id)
+			.from(workspaceMember)
+			.join(workspaceMember.user, user)
+			.where(
+				workspaceMember.workspace.id.eq(workspaceId),
+				workspaceMember.id.eq(memberId),
+				user.deletedAt.isNull()
+			)
+			.fetchOne());
+	}
+
 	public long countActiveOwnersByWorkspaceId(Long workspaceId) {
 		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
 
@@ -154,29 +186,27 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 	}
 
 	public Optional<Long> findOldestActiveAdminMemberIdByWorkspaceId(Long workspaceId) {
-		List<Long> memberIds = entityManager().createQuery("""
-				select workspaceMember.id
-				from WorkspaceMember workspaceMember
-				left join WorkspaceMemberRoleHistory roleHistory
-					on roleHistory.workspaceMember = workspaceMember
-					and roleHistory.toRole = :adminRole
-				where workspaceMember.workspace.id = :workspaceId
-					and workspaceMember.role = :adminRole
-					and workspaceMember.deletedAt is null
-				group by workspaceMember.id, workspaceMember.updatedAt
-				order by coalesce(max(roleHistory.changedAt), workspaceMember.updatedAt) asc,
-					workspaceMember.id asc
-				""", Long.class)
-			.setParameter("workspaceId", workspaceId)
-			.setParameter("adminRole", WorkspaceMemberRole.ADMIN)
-			.setMaxResults(1)
-			.getResultList();
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QWorkspaceMemberRoleHistory roleHistory = QWorkspaceMemberRoleHistory.workspaceMemberRoleHistory;
 
-		if (memberIds.isEmpty()) {
-			return Optional.empty();
-		}
-
-		return Optional.of(memberIds.get(0));
+		return Optional.ofNullable(queryFactory.select(workspaceMember.id)
+			.from(workspaceMember)
+			.leftJoin(roleHistory)
+			.on(
+				roleHistory.workspaceMember.eq(workspaceMember),
+				roleHistory.toRole.eq(WorkspaceMemberRole.ADMIN)
+			)
+			.where(
+				workspaceMember.workspace.id.eq(workspaceId),
+				workspaceMember.role.eq(WorkspaceMemberRole.ADMIN),
+				workspaceMember.deletedAt.isNull()
+			)
+			.groupBy(workspaceMember.id, workspaceMember.updatedAt)
+			.orderBy(
+				roleHistory.changedAt.max().coalesce(workspaceMember.updatedAt).asc(),
+				workspaceMember.id.asc()
+			)
+			.fetchFirst());
 	}
 
 	public void flush() {

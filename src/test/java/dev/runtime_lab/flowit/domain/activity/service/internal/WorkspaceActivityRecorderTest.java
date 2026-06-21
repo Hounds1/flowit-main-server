@@ -5,6 +5,7 @@ import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordDomain;
 import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
 import dev.runtime_lab.flowit.domain.activity.entity.ActivityRecordSourceType;
 import dev.runtime_lab.flowit.domain.activity.entity.WorkspaceActivityRecord;
+import dev.runtime_lab.flowit.domain.activity.event.WorkspaceActivityRecordedEvent;
 import dev.runtime_lab.flowit.domain.activity.repository.WorkspaceActivityRecordRepository;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
@@ -17,10 +18,12 @@ import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberWithdrawalH
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,8 +32,10 @@ class WorkspaceActivityRecorderTest {
 
 	private final WorkspaceActivityRecordRepository workspaceActivityRecordRepository =
 		mock(WorkspaceActivityRecordRepository.class);
+	private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
 	private final WorkspaceActivityRecorder workspaceActivityRecorder = new WorkspaceActivityRecorder(
 		workspaceActivityRecordRepository,
+		eventPublisher,
 		JsonMapper.builder().build()
 	);
 
@@ -81,6 +86,7 @@ class WorkspaceActivityRecorderTest {
 		);
 
 		verify(workspaceActivityRecordRepository, times(4)).save(recordCaptor.capture());
+		verify(eventPublisher, times(4)).publishEvent(any(WorkspaceActivityRecordedEvent.class));
 		List<WorkspaceActivityRecord> records = recordCaptor.getAllValues();
 
 		assertEquals(ActivityRecordAction.JOINED, records.get(0).getAction());

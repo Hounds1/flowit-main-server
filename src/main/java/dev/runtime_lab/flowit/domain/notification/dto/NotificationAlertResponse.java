@@ -1,6 +1,17 @@
 package dev.runtime_lab.flowit.domain.notification.dto;
 
 import dev.runtime_lab.flowit.global.socket.dto.WebSocketPayload;
+import java.util.List;
 
-public record NotificationAlertResponse() implements WebSocketPayload {
+public record NotificationAlertResponse(
+	Long id,
+	NotificationAlertType type,
+	Long occurredAt,
+	NotificationScopeResponse scope,
+	NotificationActorResponse actor,
+	NotificationSubjectResponse subject,
+	List<NotificationChangeResponse> changes,
+	NotificationLinkResponse link,
+	boolean read
+) implements WebSocketPayload {
 }

@@ -124,6 +124,48 @@ a|``PUT /v1/users/me/profile-image`` +
 ====
 
 [%collapsible]
+.알림 API
+====
+
+[cols="28,30,42",role="api-index"]
+|===
+|문서 |Endpoint |설명
+
+|link:notifications-list.html[알림 목록 조회 API]
+|``GET /v1/notifications``
+|현재 사용자의 개인 알림 목록과 읽음/확인 카운트를 조회하는 API를 설명합니다.
+
+|link:notifications-seen.html[알림 확인 처리 API]
+|``PATCH /v1/notifications/seen``
+|알림 오버레이가 열렸음을 서버에 알려 아직 확인하지 않은 알림을 확인 처리하는 API를 설명합니다.
+
+|link:notifications-read-all.html[알림 모두 읽음 API]
+|``PATCH /v1/notifications/read-all``
+|현재 사용자의 읽지 않은 알림을 모두 읽음 처리하는 API를 설명합니다.
+|===
+
+====
+
+[%collapsible]
+.WebSocket
+====
+
+[cols="28,30,42",role="api-index"]
+|===
+|문서 |Endpoint |설명
+
+|link:websocket-notifications.html[알림 WebSocket]
+|``/ws`` + ``/user/queue/notifications``
+|STOMP WebSocket 연결, 인증 header, 알림 구독 destination, 공통 payload와 클라이언트 주의점을 설명합니다.
+
+|link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
+|``/user/queue/notifications``
+|워크스페이스 멤버 변경 알림 payload, 관점별 분기, 사용하는 enum 상수를 설명합니다.
+|===
+
+====
+
+[%collapsible]
 .워크스페이스 API
 ====
 

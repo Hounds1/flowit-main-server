@@ -1,0 +1,9 @@
+package dev.runtime_lab.flowit.domain.notification.dto;
+
+public enum NotificationAlertType {
+	WORKSPACE_MEMBER_JOINED,
+	WORKSPACE_MEMBER_ROLE_CHANGED,
+	WORKSPACE_MEMBER_REMOVED,
+	WORKSPACE_ACCESS_REVOKED,
+	WORKSPACE_MEMBER_WITHDRAWN
+}
