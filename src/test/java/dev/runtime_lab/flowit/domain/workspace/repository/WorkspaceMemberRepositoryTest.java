@@ -12,13 +12,13 @@ import dev.runtime_lab.flowit.domain.user.entity.UserStatus;
 import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMember;
+import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMemberRoleHistory;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -236,24 +236,30 @@ class WorkspaceMemberRepositoryTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	void findOldestActiveAdminMemberIdByWorkspaceIdReturnsFirstCandidateId() {
-		TypedQuery<Long> query = mock(TypedQuery.class);
+		JPAQuery<Long> query = mock(JPAQuery.class);
 
-		when(entityManager.createQuery(any(String.class), org.mockito.ArgumentMatchers.eq(Long.class)))
+		when(queryFactory.select(org.mockito.ArgumentMatchers.<com.querydsl.core.types.Expression<Long>>any()))
 			.thenReturn(query);
-		when(query.setParameter("workspaceId", 10L)).thenReturn(query);
-		when(query.setParameter("adminRole", WorkspaceMemberRole.ADMIN)).thenReturn(query);
-		when(query.setMaxResults(1)).thenReturn(query);
-		when(query.getResultList()).thenReturn(List.of(200L));
+		when(query.from(QWorkspaceMember.workspaceMember)).thenReturn(query);
+		when(query.leftJoin(QWorkspaceMemberRoleHistory.workspaceMemberRoleHistory)).thenReturn(query);
+		when(query.on(any(Predicate.class), any(Predicate.class))).thenReturn(query);
+		when(query.where(any(Predicate.class), any(Predicate.class), any(Predicate.class))).thenReturn(query);
+		when(query.groupBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(query);
+		when(query.orderBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(query);
+		when(query.fetchFirst()).thenReturn(200L);
 
 		var found = repository.findOldestActiveAdminMemberIdByWorkspaceId(10L);
 
 		assertTrue(found.isPresent());
 		assertEquals(200L, found.get());
-		verify(entityManager).createQuery(any(String.class), org.mockito.ArgumentMatchers.eq(Long.class));
-		verify(query).setParameter("workspaceId", 10L);
-		verify(query).setParameter("adminRole", WorkspaceMemberRole.ADMIN);
-		verify(query).setMaxResults(1);
-		verify(query).getResultList();
+		verify(queryFactory).select(org.mockito.ArgumentMatchers.<com.querydsl.core.types.Expression<Long>>any());
+		verify(query).from(QWorkspaceMember.workspaceMember);
+		verify(query).leftJoin(QWorkspaceMemberRoleHistory.workspaceMemberRoleHistory);
+		verify(query).on(any(Predicate.class), any(Predicate.class));
+		verify(query).where(any(Predicate.class), any(Predicate.class), any(Predicate.class));
+		verify(query).groupBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+		verify(query).orderBy(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+		verify(query).fetchFirst();
 	}
 
 	@Test

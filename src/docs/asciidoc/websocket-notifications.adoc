@@ -1,0 +1,161 @@
+= 알림 WebSocket
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-websocket-notifications:
+:breadcrumb-section: WebSocket
+:breadcrumb-current: 알림 WebSocket
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 알림 WebSocket
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|프로토콜 |WebSocket + STOMP
+|엔드포인트 |``/ws``
+|CONNECT 인증 |STOMP native header ``Authorization: Bearer {accessToken}``
+|구독 destination |``/user/queue/notifications``
+|서버 발송 destination |서버는 사용자별 큐 ``/queue/notifications``로 발송합니다. 클라이언트는 ``/user`` prefix를 붙인 destination을 구독합니다.
+|payload |link:notifications-list.html[알림 목록 조회 API]의 ``data.items[]``와 동일한 ``NotificationAlertResponse`` 구조입니다.
+|Origin |WebSocket handshake의 ``Origin``이 서버 허용 목록에 포함되어야 합니다.
+|역할 |API는 저장된 알림의 최종 상태 조회와 읽음/확인 처리를 담당하고, WebSocket은 접속 중 새 알림을 오버레이에 동적으로 추가하기 위한 보조 경로입니다.
+|===
+
+== 연결 흐름
+
+[source,text]
+----
+CONNECT /ws
+Authorization: Bearer {accessToken}
+
+SUBSCRIBE /user/queue/notifications
+
+MESSAGE /user/queue/notifications
+----
+
+클라이언트는 STOMP ``CONNECT`` 프레임의 native header로 JWT access token을 전달해야 합니다. HTTP handshake header가 아니라 STOMP header 기준입니다.
+
+== 클라이언트 연결 예시
+
+[source,javascript]
+----
+import { Client } from "@stomp/stompjs";
+
+const client = new Client({
+  brokerURL: `${wsBaseUrl}/ws`,
+  connectHeaders: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+  reconnectDelay: 5000,
+  onConnect: () => {
+    client.subscribe("/user/queue/notifications", (message) => {
+      const notification = JSON.parse(message.body);
+      appendNotification(notification);
+    });
+  },
+});
+
+client.activate();
+----
+
+운영 환경에서는 ``ws://`` 대신 ``wss://``를 사용해야 합니다. 현재 서버 엔드포인트는 순수 WebSocket 엔드포인트이며 SockJS fallback을 제공하지 않습니다.
+
+== 구독 destination
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|클라이언트 구독 |``/user/queue/notifications``
+|사용자 식별 |JWT subject가 WebSocket ``Principal.getName()``으로 사용됩니다.
+|서버 발송 |서버는 ``convertAndSendToUser(userId, "/queue/notifications", payload)`` 형태로 특정 사용자에게 발송합니다.
+|권한 |인증된 사용자만 ``/user/queue/**``를 구독할 수 있습니다.
+|===
+
+== 주의점
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|기준 상태 |클라이언트는 최초 진입과 재접속 후 link:notifications-list.html[알림 목록 조회 API]를 호출해 서버 상태를 기준으로 동기화해야 합니다.
+|중복 처리 |WebSocket 수신과 API 재조회가 겹칠 수 있으므로 ``id`` 기준으로 중복 알림을 병합해야 합니다.
+|읽음 처리 |WebSocket 수신만으로 ``read`` 또는 ``seen`` 상태가 변경되지 않습니다. 오버레이를 열면 link:notifications-seen.html[알림 확인 처리 API]를 호출하고, 전체 읽음은 link:notifications-read-all.html[알림 모두 읽음 API]를 호출합니다.
+|토큰 갱신 |연결 중 access token이 만료될 수 있습니다. 재연결 시점에는 최신 access token을 ``CONNECT`` header에 넣어야 합니다.
+|Origin 허용 |프론트엔드 배포 origin이 서버의 허용 origin 목록에 없으면 WebSocket handshake가 실패할 수 있습니다. 로컬, 개발, 운영 환경의 ``wsBaseUrl``과 origin 설정을 함께 확인해야 합니다.
+|권한 변화 |워크스페이스 멤버십 변경으로 접근 권한이 바뀔 수 있습니다. 링크 이동 전에는 API 응답과 라우팅 권한을 다시 확인해야 합니다.
+|순서 보장 |단일 연결 안에서는 수신 순서를 사용할 수 있지만, 재연결과 API 재조회 이후에는 ``occurredAt``과 ``id`` 기준 정렬을 함께 사용해야 합니다.
+|===
+
+== 세부 소켓 문서
+
+[cols="1,4",options="header",role="api-table"]
+|===
+|문서 |설명
+
+|link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
+|워크스페이스 멤버 가입, 역할 변경, 강제 퇴장, 탈퇴 이벤트에서 내려오는 알림 payload와 enum 상수를 설명합니다.
+|===
+
+== payload 필드
+
+[cols="1,1,4",options="header",role="api-table"]
+|===
+|필드 |타입 |설명
+
+|``id``
+|Number
+|알림 식별자입니다.
+
+|``type``
+|String
+|알림 유형입니다. link:enum-reference.html#notification-alert-type[NotificationAlertType]을 참고합니다.
+
+|``occurredAt``
+|Number
+|알림 원인이 된 이벤트 발생 시각입니다. Unix epoch seconds 기준입니다.
+
+|``scope``
+|Object
+|알림이 속한 범위입니다.
+
+|``actor``
+|Object
+|알림을 발생시킨 주체입니다.
+
+|``subject``
+|Object
+|알림의 대상입니다.
+
+|``changes``
+|Array
+|변경 내용 목록입니다. 변경 내용이 없으면 빈 배열입니다.
+
+|``link``
+|Object
+|클라이언트 이동에 사용할 링크 힌트입니다.
+
+|``read``
+|Boolean
+|현재 사용자 기준 읽음 여부입니다. WebSocket으로 새로 받은 알림은 일반적으로 ``false``입니다.
+|===
+
+== API와의 관계
+
+WebSocket으로 전달된 알림은 서버에 저장된 알림을 실시간으로 추가 전달하는 보조 경로입니다. 클라이언트는 재접속, 새로고침, 미접속 구간 복구를 위해 link:notifications-list.html[알림 목록 조회 API]를 기준 상태로 사용해야 합니다.
+
+오버레이를 열어 알림을 확인했다면 link:notifications-seen.html[알림 확인 처리 API]를 호출하고, 전체 알림을 읽음 처리할 때는 link:notifications-read-all.html[알림 모두 읽음 API]를 호출합니다.
+
+[.related-docs]
+== 관련 문서
+
+* link:notifications-list.html[알림 목록 조회 API]
+* link:notifications-seen.html[알림 확인 처리 API]
+* link:notifications-read-all.html[알림 모두 읽음 API]
+* link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
+* link:enum-reference.html[Enum Reference]
+* link:api-response.html[공통 응답 포맷]

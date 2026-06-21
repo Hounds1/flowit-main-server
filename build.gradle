@@ -14,7 +14,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.30-volt'
+version = '0.2.31-volt'
 
 java {
 	toolchain {
@@ -957,6 +957,28 @@ tasks.named('test') {
 		exclude 'dev/runtime_lab/flowit/docs/**'
 	}
 	useJUnitPlatform()
+	if (isTruthy((project.findProperty('showTestFlow') ?: '').toString())) {
+		testLogging {
+			events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+			showStandardStreams = true
+		}
+	}
+}
+
+tasks.register('webSocketConnectionTest', Test) {
+	group = 'verification'
+	description = 'Runs the WebSocket connection flow test with console-visible STOMP flow logs.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'dev.runtime_lab.flowit.global.socket.WebSocketConnectionIntegrationTest'
+	}
+	testLogging {
+		events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
+		showStandardStreams = true
+	}
+	outputs.upToDateWhen { false }
 }
 
 tasks.register('localInfraStart') {

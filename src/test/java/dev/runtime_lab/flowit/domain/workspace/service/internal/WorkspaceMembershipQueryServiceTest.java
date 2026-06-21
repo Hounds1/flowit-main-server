@@ -3,12 +3,13 @@ package dev.runtime_lab.flowit.domain.workspace.service.internal;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
 import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
-import java.util.List;
-
 import dev.runtime_lab.flowit.domain.workspace.service.internal.contract.WorkspaceMembershipSummary;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,5 +36,27 @@ class WorkspaceMembershipQueryServiceTest {
 		assertEquals("Flowit", response.get(0).workspaceName());
 		assertEquals(WorkspaceMemberRole.OWNER, response.get(0).role());
 		verify(workspaceMemberRepository).findActiveMembershipsByUserId(1L);
+	}
+
+	@Test
+	void findActiveMemberUserIdsDelegatesRepository() {
+		when(workspaceMemberRepository.findActiveUserIdsByWorkspaceId(10L)).thenReturn(List.of(1L, 2L));
+
+		List<Long> userIds = workspaceMembershipQueryService.findActiveMemberUserIds(10L);
+
+		assertEquals(List.of(1L, 2L), userIds);
+		verify(workspaceMemberRepository).findActiveUserIdsByWorkspaceId(10L);
+	}
+
+	@Test
+	void findMemberUserIdDelegatesRepository() {
+		when(workspaceMemberRepository.findUserIdByWorkspaceIdAndMemberId(10L, 100L))
+			.thenReturn(Optional.of(1L));
+
+		Optional<Long> userId = workspaceMembershipQueryService.findMemberUserId(10L, 100L);
+
+		assertTrue(userId.isPresent());
+		assertEquals(1L, userId.get());
+		verify(workspaceMemberRepository).findUserIdByWorkspaceIdAndMemberId(10L, 100L);
 	}
 }

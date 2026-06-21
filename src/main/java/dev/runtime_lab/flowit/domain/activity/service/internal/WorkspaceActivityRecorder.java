@@ -7,6 +7,7 @@ import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordDomain;
 import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
 import dev.runtime_lab.flowit.domain.activity.entity.ActivityRecordSourceType;
 import dev.runtime_lab.flowit.domain.activity.entity.WorkspaceActivityRecord;
+import dev.runtime_lab.flowit.domain.activity.event.WorkspaceActivityRecordedEvent;
 import dev.runtime_lab.flowit.domain.activity.repository.WorkspaceActivityRecordRepository;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryChangeResponse;
 import dev.runtime_lab.flowit.domain.task.entity.TaskChangeHistory;
@@ -22,6 +23,7 @@ import dev.runtime_lab.flowit.global.stereotype.InternalService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -32,10 +34,11 @@ public class WorkspaceActivityRecorder {
 	private static final String ACTIVE_MEMBERSHIP_VALUE = "ACTIVE";
 
 	private final WorkspaceActivityRecordRepository workspaceActivityRecordRepository;
+	private final ApplicationEventPublisher eventPublisher;
 	private final JsonMapper jsonMapper;
 
 	public void recordTask(TaskChangeHistory history, List<TaskHistoryChangeResponse> changes) {
-		workspaceActivityRecordRepository.save(WorkspaceActivityRecord.builder()
+		save(WorkspaceActivityRecord.builder()
 			.workspace(history.getWorkspace())
 			.sourceType(ActivityRecordSourceType.TASK_CHANGE_HISTORY)
 			.sourceId(history.getId())
@@ -59,7 +62,7 @@ public class WorkspaceActivityRecorder {
 		WorkspaceJoinRequestHistory source,
 		Long occurredAt
 	) {
-		workspaceActivityRecordRepository.save(memberActivityBuilder(
+		save(memberActivityBuilder(
 				workspace,
 				ActivityRecordSourceType.WORKSPACE_JOIN_REQUEST_HISTORY,
 				source.getId(),
@@ -86,7 +89,7 @@ public class WorkspaceActivityRecorder {
 		WorkspaceMemberRoleHistory source,
 		Long occurredAt
 	) {
-		workspaceActivityRecordRepository.save(memberActivityBuilder(
+		save(memberActivityBuilder(
 				workspace,
 				ActivityRecordSourceType.WORKSPACE_MEMBER_ROLE_HISTORY,
 				source.getId(),
@@ -109,7 +112,7 @@ public class WorkspaceActivityRecorder {
 		WorkspaceMemberRemovalHistory source,
 		Long occurredAt
 	) {
-		workspaceActivityRecordRepository.save(memberActivityBuilder(
+		save(memberActivityBuilder(
 				workspace,
 				ActivityRecordSourceType.WORKSPACE_MEMBER_REMOVAL_HISTORY,
 				source.getId(),
@@ -135,7 +138,7 @@ public class WorkspaceActivityRecorder {
 		WorkspaceMemberWithdrawalHistory source,
 		Long occurredAt
 	) {
-		workspaceActivityRecordRepository.save(memberActivityBuilder(
+		save(memberActivityBuilder(
 				workspace,
 				ActivityRecordSourceType.WORKSPACE_MEMBER_WITHDRAWAL_HISTORY,
 				source.getId(),
@@ -147,6 +150,11 @@ public class WorkspaceActivityRecorder {
 				occurredAt
 			)
 			.build());
+	}
+
+	private void save(WorkspaceActivityRecord record) {
+		workspaceActivityRecordRepository.save(record);
+		eventPublisher.publishEvent(WorkspaceActivityRecordedEvent.from(record));
 	}
 
 	private List<ActivityChangeResponse> taskActivityChanges(List<TaskHistoryChangeResponse> changes) {

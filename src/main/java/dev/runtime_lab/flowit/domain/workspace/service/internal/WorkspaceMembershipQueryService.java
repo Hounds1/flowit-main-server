@@ -5,6 +5,7 @@ import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberReposit
 import dev.runtime_lab.flowit.domain.workspace.service.internal.contract.WorkspaceMembershipSummary;
 import dev.runtime_lab.flowit.global.stereotype.InternalService;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,16 @@ public class WorkspaceMembershipQueryService {
 			.stream()
 			.map(this::summary)
 			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public List<Long> findActiveMemberUserIds(Long workspaceId) {
+		return workspaceMemberRepository.findActiveUserIdsByWorkspaceId(workspaceId);
+	}
+
+	@Transactional(readOnly = true)
+	public Optional<Long> findMemberUserId(Long workspaceId, Long memberId) {
+		return workspaceMemberRepository.findUserIdByWorkspaceIdAndMemberId(workspaceId, memberId);
 	}
 
 	private WorkspaceMembershipSummary summary(WorkspaceMembershipProjection projection) {

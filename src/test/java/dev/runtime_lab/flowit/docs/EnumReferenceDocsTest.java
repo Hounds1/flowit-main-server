@@ -5,6 +5,11 @@ import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordAction;
 import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordDomain;
 import dev.runtime_lab.flowit.domain.activity.dto.ActivityRecordTopic;
 import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationActorType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectType;
 import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryAction;
 import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryElement;
 import dev.runtime_lab.flowit.domain.task.entity.TaskPriority;
@@ -43,6 +48,16 @@ class EnumReferenceDocsTest {
 		Path activityRecordActionSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-record-action.adoc");
 		Path activityTargetTypeSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-target-type.adoc");
 		Path activityChangeElementSnippetPath = Path.of("build/generated-snippets/enum-reference/activity-change-element.adoc");
+		Path notificationAlertTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-alert-type.adoc");
+		Path notificationScopeTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-scope-type.adoc");
+		Path notificationActorTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-actor-type.adoc");
+		Path notificationSubjectTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-subject-type.adoc");
+		Path notificationLinkTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-link-type.adoc");
 
 		Files.createDirectories(userStatusSnippetPath.getParent());
 		Files.writeString(
@@ -182,6 +197,46 @@ class EnumReferenceDocsTest {
 			)),
 			StandardCharsets.UTF_8
 		);
+		Files.writeString(
+			notificationAlertTypeSnippetPath,
+			enumTable(NotificationAlertType.values(), Map.of(
+				NotificationAlertType.WORKSPACE_MEMBER_JOINED, "워크스페이스 멤버가 가입한 알림입니다.",
+				NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED, "워크스페이스 멤버 역할이 변경된 알림입니다.",
+				NotificationAlertType.WORKSPACE_MEMBER_REMOVED, "워크스페이스 구성원 관점의 멤버 강제 퇴장 알림입니다.",
+				NotificationAlertType.WORKSPACE_ACCESS_REVOKED, "강제 퇴장 당사자 관점의 워크스페이스 접근 권한 회수 알림입니다.",
+				NotificationAlertType.WORKSPACE_MEMBER_WITHDRAWN, "워크스페이스 멤버가 자진 탈퇴한 알림입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			notificationScopeTypeSnippetPath,
+			enumTable(NotificationScopeType.values(), Map.of(
+				NotificationScopeType.WORKSPACE, "알림 범위가 워크스페이스입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			notificationActorTypeSnippetPath,
+			enumTable(NotificationActorType.values(), Map.of(
+				NotificationActorType.USER, "알림을 발생시킨 주체가 사용자입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			notificationSubjectTypeSnippetPath,
+			enumTable(NotificationSubjectType.values(), Map.of(
+				NotificationSubjectType.WORKSPACE_MEMBER, "알림 대상이 워크스페이스 멤버입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
+		Files.writeString(
+			notificationLinkTypeSnippetPath,
+			enumTable(NotificationLinkType.values(), Map.of(
+				NotificationLinkType.NONE, "클라이언트 이동 링크가 없는 알림입니다.",
+				NotificationLinkType.WORKSPACE_MEMBERS, "워크스페이스 멤버 화면으로 이동할 수 있는 알림입니다."
+			)),
+			StandardCharsets.UTF_8
+		);
 
 		assertTrue(Files.exists(userStatusSnippetPath));
 		assertTrue(Files.exists(workspaceMemberRoleSnippetPath));
@@ -196,6 +251,11 @@ class EnumReferenceDocsTest {
 		assertTrue(Files.exists(activityRecordActionSnippetPath));
 		assertTrue(Files.exists(activityTargetTypeSnippetPath));
 		assertTrue(Files.exists(activityChangeElementSnippetPath));
+		assertTrue(Files.exists(notificationAlertTypeSnippetPath));
+		assertTrue(Files.exists(notificationScopeTypeSnippetPath));
+		assertTrue(Files.exists(notificationActorTypeSnippetPath));
+		assertTrue(Files.exists(notificationSubjectTypeSnippetPath));
+		assertTrue(Files.exists(notificationLinkTypeSnippetPath));
 	}
 
 	private <E extends Enum<E>> String enumTable(E[] values, Map<E, String> descriptions) {
