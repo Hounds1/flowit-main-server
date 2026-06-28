@@ -30,6 +30,13 @@ ifndef::nav-api-response[]
 * link:api-response.html[공통 응답 포맷]
 endif::nav-api-response[]
 
+ifdef::nav-response-socket-composition-guide[]
+* [.is-current]#응답/소켓 조립 가이드#
+endif::nav-response-socket-composition-guide[]
+ifndef::nav-response-socket-composition-guide[]
+* link:response-socket-composition-guide.html[응답/소켓 조립 가이드]
+endif::nav-response-socket-composition-guide[]
+
 ifdef::nav-integration-notes[]
 * [.is-current]#Integration Notes#
 endif::nav-integration-notes[]
