@@ -74,6 +74,7 @@ include::_api-errors.adoc[]
 
 * link:workspaces-tasks-list.html[작업 목록 조회 API]
 * link:workspaces-members.html[워크스페이스 멤버 목록 조회 API]
+* link:response-socket-composition-guide.html[응답/소켓 조립 가이드]
 * link:enum-reference.html[Enum Reference]
 * link:api-response.html[공통 응답 포맷]
 * link:error-codes.html[에러 코드]
