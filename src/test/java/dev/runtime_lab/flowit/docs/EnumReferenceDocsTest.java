@@ -199,12 +199,18 @@ class EnumReferenceDocsTest {
 		);
 		Files.writeString(
 			notificationAlertTypeSnippetPath,
-			enumTable(NotificationAlertType.values(), Map.of(
-				NotificationAlertType.WORKSPACE_MEMBER_JOINED, "워크스페이스 멤버가 가입한 알림입니다.",
-				NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED, "워크스페이스 멤버 역할이 변경된 알림입니다.",
-				NotificationAlertType.WORKSPACE_MEMBER_REMOVED, "워크스페이스 구성원 관점의 멤버 강제 퇴장 알림입니다.",
-				NotificationAlertType.WORKSPACE_ACCESS_REVOKED, "강제 퇴장 당사자 관점의 워크스페이스 접근 권한 회수 알림입니다.",
-				NotificationAlertType.WORKSPACE_MEMBER_WITHDRAWN, "워크스페이스 멤버가 자진 탈퇴한 알림입니다."
+			enumTable(NotificationAlertType.values(), Map.ofEntries(
+				entry(NotificationAlertType.TASK_CREATED, "작업이 생성된 알림입니다."),
+				entry(NotificationAlertType.TASK_DATE_CHANGED, "작업 시작일 또는 마감일이 변경된 알림입니다."),
+				entry(NotificationAlertType.TASK_STATUS_CHANGED, "작업 상태가 변경된 알림입니다."),
+				entry(NotificationAlertType.TASK_PROGRESS_CHANGED, "작업 진행률이 변경된 알림입니다."),
+				entry(NotificationAlertType.TASK_ASSIGNED, "작업 담당자로 할당된 알림입니다."),
+				entry(NotificationAlertType.TASK_UNASSIGNED, "작업 담당자에서 해제된 알림입니다."),
+				entry(NotificationAlertType.WORKSPACE_MEMBER_JOINED, "워크스페이스 멤버가 가입한 알림입니다."),
+				entry(NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED, "워크스페이스 멤버 역할이 변경된 알림입니다."),
+				entry(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, "워크스페이스 구성원 관점의 멤버 강제 퇴장 알림입니다."),
+				entry(NotificationAlertType.WORKSPACE_ACCESS_REVOKED, "강제 퇴장 당사자 관점의 워크스페이스 접근 권한 회수 알림입니다."),
+				entry(NotificationAlertType.WORKSPACE_MEMBER_WITHDRAWN, "워크스페이스 멤버가 자진 탈퇴한 알림입니다.")
 			)),
 			StandardCharsets.UTF_8
 		);
@@ -225,6 +231,7 @@ class EnumReferenceDocsTest {
 		Files.writeString(
 			notificationSubjectTypeSnippetPath,
 			enumTable(NotificationSubjectType.values(), Map.of(
+				NotificationSubjectType.TASK, "알림 대상이 작업입니다.",
 				NotificationSubjectType.WORKSPACE_MEMBER, "알림 대상이 워크스페이스 멤버입니다."
 			)),
 			StandardCharsets.UTF_8
@@ -233,6 +240,7 @@ class EnumReferenceDocsTest {
 			notificationLinkTypeSnippetPath,
 			enumTable(NotificationLinkType.values(), Map.of(
 				NotificationLinkType.NONE, "클라이언트 이동 링크가 없는 알림입니다.",
+				NotificationLinkType.TASK_DETAIL, "작업 상세 화면으로 이동할 수 있는 알림입니다.",
 				NotificationLinkType.WORKSPACE_MEMBERS, "워크스페이스 멤버 화면으로 이동할 수 있는 알림입니다."
 			)),
 			StandardCharsets.UTF_8

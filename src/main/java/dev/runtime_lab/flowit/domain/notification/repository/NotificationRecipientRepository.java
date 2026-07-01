@@ -25,19 +25,6 @@ public class NotificationRecipientRepository extends CustomJpaRepo<NotificationR
 		return recipients;
 	}
 
-	public List<Long> findVisibleUserIdsByNotificationAlertId(Long notificationAlertId) {
-		QNotificationRecipient recipient = QNotificationRecipient.notificationRecipient;
-
-		return queryFactory.select(recipient.userId)
-			.from(recipient)
-			.where(
-				recipient.notificationAlert.id.eq(notificationAlertId),
-				recipient.hiddenAt.isNull()
-			)
-			.orderBy(recipient.userId.asc())
-			.fetch();
-	}
-
 	public List<NotificationRecipient> findVisibleByUserId(Long userId, int page, int size) {
 		QNotificationRecipient recipient = QNotificationRecipient.notificationRecipient;
 		QNotificationAlert alert = QNotificationAlert.notificationAlert;
@@ -48,8 +35,38 @@ public class NotificationRecipientRepository extends CustomJpaRepo<NotificationR
 				recipient.userId.eq(userId),
 				recipient.hiddenAt.isNull()
 			)
-			.orderBy(recipient.createdAt.desc(), recipient.id.desc())
+			.orderBy(
+				recipient.createdAt.desc(),
+				alert.groupId.desc().nullsLast(),
+				alert.groupSequence.asc(),
+				recipient.id.desc()
+			)
 			.offset((long) page * size)
+			.limit(size)
+			.fetch();
+	}
+
+	public List<NotificationRecipient> findPendingSocketDeliveryByUserId(Long userId, int size) {
+		if (size <= 0) {
+			return List.of();
+		}
+
+		QNotificationRecipient recipient = QNotificationRecipient.notificationRecipient;
+		QNotificationAlert alert = QNotificationAlert.notificationAlert;
+
+		return queryFactory.selectFrom(recipient)
+			.join(recipient.notificationAlert, alert).fetchJoin()
+			.where(
+				recipient.userId.eq(userId),
+				recipient.hiddenAt.isNull(),
+				recipient.socketSentAt.isNull()
+			)
+			.orderBy(
+				recipient.createdAt.asc(),
+				alert.groupId.asc().nullsLast(),
+				alert.groupSequence.asc(),
+				recipient.id.asc()
+			)
 			.limit(size)
 			.fetch();
 	}
@@ -122,6 +139,20 @@ public class NotificationRecipientRepository extends CustomJpaRepo<NotificationR
 				recipient.userId.eq(userId),
 				recipient.hiddenAt.isNull(),
 				recipient.readAt.isNull()
+			)
+			.execute());
+	}
+
+	@Transactional
+	public int markSocketSentIfPending(Long recipientId, Long socketSentAt) {
+		QNotificationRecipient recipient = QNotificationRecipient.notificationRecipient;
+
+		return Math.toIntExact(queryFactory.update(recipient)
+			.set(recipient.socketSentAt, socketSentAt)
+			.where(
+				recipient.id.eq(recipientId),
+				recipient.hiddenAt.isNull(),
+				recipient.socketSentAt.isNull()
 			)
 			.execute());
 	}

@@ -103,6 +103,13 @@ public class NotificationAlert {
 	@Column(name = "occurred_at", nullable = false)
 	private Long occurredAt;
 
+	@Column(name = "group_id", length = 120)
+	private String groupId;
+
+	@Builder.Default
+	@Column(name = "group_sequence", nullable = false)
+	private Integer groupSequence = 0;
+
 	@Column(name = "created_at", nullable = false)
 	private Long createdAt;
 }

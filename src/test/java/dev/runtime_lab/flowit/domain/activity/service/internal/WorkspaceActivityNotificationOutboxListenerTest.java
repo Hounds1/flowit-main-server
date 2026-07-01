@@ -24,7 +24,7 @@ class WorkspaceActivityNotificationOutboxListenerTest {
 		ArgumentCaptor<WorkspaceActivityNotificationOutboxPayload> payloadCaptor =
 			ArgumentCaptor.forClass(WorkspaceActivityNotificationOutboxPayload.class);
 
-		listener.publishWorkspaceMemberNotificationOutbox(new WorkspaceActivityRecordedEvent(
+		listener.publishWorkspaceActivityNotificationOutbox(new WorkspaceActivityRecordedEvent(
 			921L,
 			12L,
 			ActivityRecordDomain.WORKSPACE_MEMBER,
@@ -40,9 +40,29 @@ class WorkspaceActivityNotificationOutboxListenerTest {
 	}
 
 	@Test
-	void ignoresNonMemberActivity() {
-		listener.publishWorkspaceMemberNotificationOutbox(new WorkspaceActivityRecordedEvent(
+	void publishesOutboxEventForTaskActivityBeforeCommit() {
+		ArgumentCaptor<WorkspaceActivityNotificationOutboxPayload> payloadCaptor =
+			ArgumentCaptor.forClass(WorkspaceActivityNotificationOutboxPayload.class);
+
+		listener.publishWorkspaceActivityNotificationOutbox(new WorkspaceActivityRecordedEvent(
 			1L,
+			12L,
+			ActivityRecordDomain.TASK,
+			ActivityRecordAction.CREATED,
+			1782013200L
+		));
+
+		verify(outboxEventPublisher).publish(
+			org.mockito.ArgumentMatchers.eq(OutboxEventType.WORKSPACE_ACTIVITY_NOTIFICATION_REQUESTED),
+			payloadCaptor.capture()
+		);
+		assertEquals(1L, payloadCaptor.getValue().activityRecordId());
+	}
+
+	@Test
+	void ignoresActivityWithoutRecordId() {
+		listener.publishWorkspaceActivityNotificationOutbox(new WorkspaceActivityRecordedEvent(
+			null,
 			12L,
 			ActivityRecordDomain.TASK,
 			ActivityRecordAction.CREATED,

@@ -16,8 +16,8 @@ public class WorkspaceActivityNotificationOutboxListener {
 	private final OutboxEventPublisher outboxEventPublisher;
 
 	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-	public void publishWorkspaceMemberNotificationOutbox(WorkspaceActivityRecordedEvent event) {
-		if (event.activityRecordId() == null || event.domain() != ActivityRecordDomain.WORKSPACE_MEMBER) {
+	public void publishWorkspaceActivityNotificationOutbox(WorkspaceActivityRecordedEvent event) {
+		if (event.activityRecordId() == null || !supportsNotification(event.domain())) {
 			return;
 		}
 
@@ -25,5 +25,9 @@ public class WorkspaceActivityNotificationOutboxListener {
 			OutboxEventType.WORKSPACE_ACTIVITY_NOTIFICATION_REQUESTED,
 			new WorkspaceActivityNotificationOutboxPayload(event.activityRecordId())
 		);
+	}
+
+	private boolean supportsNotification(ActivityRecordDomain domain) {
+		return domain == ActivityRecordDomain.WORKSPACE_MEMBER || domain == ActivityRecordDomain.TASK;
 	}
 }

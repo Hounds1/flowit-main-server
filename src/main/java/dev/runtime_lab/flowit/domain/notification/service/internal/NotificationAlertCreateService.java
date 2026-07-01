@@ -4,7 +4,7 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationAlert;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationRecipient;
-import dev.runtime_lab.flowit.domain.notification.event.NotificationAlertCreatedEvent;
+import dev.runtime_lab.flowit.domain.notification.event.NotificationRecipientDeliveryRequestedEvent;
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationAlertRepository;
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationRecipientRepository;
 import dev.runtime_lab.flowit.domain.notification.service.internal.command.NotificationAlertCreateCommand;
@@ -13,6 +13,7 @@ import dev.runtime_lab.flowit.global.stereotype.InternalService;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,7 +31,33 @@ public class NotificationAlertCreateService {
 
 	@Transactional
 	public void create(NotificationAlertCreateCommand command) {
+		createAll(List.of(command));
+	}
+
+	@Transactional
+	public void createAll(List<NotificationAlertCreateCommand> commands) {
+		if (commands.isEmpty()) {
+			return;
+		}
+
 		Long createdAt = Instant.now(clock).getEpochSecond();
+		commands.stream()
+			.map(command -> create(command, createdAt))
+			.flatMap(List::stream)
+			.distinct()
+			.map(NotificationRecipientDeliveryRequestedEvent::new)
+			.forEach(eventPublisher::publishEvent);
+	}
+
+	private List<Long> create(NotificationAlertCreateCommand command, Long createdAt) {
+		List<Long> recipientUserIds = recipientUserIds(command).stream()
+			.filter(Objects::nonNull)
+			.distinct()
+			.toList();
+		if (recipientUserIds.isEmpty()) {
+			return List.of();
+		}
+
 		NotificationAlert notificationAlert = notificationAlertRepository.save(NotificationAlert.builder()
 			.sourceType(command.sourceType())
 			.sourceId(command.sourceId())
@@ -49,11 +76,12 @@ public class NotificationAlertCreateService {
 			.linkType(command.linkType())
 			.linkWorkspaceId(command.linkWorkspaceId())
 			.occurredAt(command.occurredAt())
+			.groupId(command.groupId())
+			.groupSequence(command.groupSequence())
 			.createdAt(createdAt)
 			.build());
 
-		notificationRecipientRepository.saveAll(recipientUserIds(command).stream()
-			.distinct()
+		notificationRecipientRepository.saveAll(recipientUserIds.stream()
 			.map(userId -> NotificationRecipient.builder()
 				.notificationAlert(notificationAlert)
 				.userId(userId)
@@ -61,10 +89,14 @@ public class NotificationAlertCreateService {
 				.build())
 			.toList());
 
-		eventPublisher.publishEvent(NotificationAlertCreatedEvent.from(notificationAlert));
+		return recipientUserIds;
 	}
 
 	private List<Long> recipientUserIds(NotificationAlertCreateCommand command) {
+		if (command.recipientUserIds() != null) {
+			return command.recipientUserIds();
+		}
+
 		if (command.scopeType() != NotificationScopeType.WORKSPACE) {
 			return List.of();
 		}

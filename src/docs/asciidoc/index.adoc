@@ -173,6 +173,10 @@ a|``PUT /v1/users/me/profile-image`` +
 |link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
 |``/user/queue/notifications``
 |워크스페이스 멤버 변경 알림 payload, 관점별 분기, 사용하는 enum 상수를 설명합니다.
+
+|link:websocket-task-notifications.html[작업 알림 WebSocket]
+|``/user/queue/notifications``
+|작업 생성, 기간 변경, 상태 변경, 진행도 변경, 담당자 할당/해제 알림 payload와 수신자 범위를 설명합니다.
 |===
 
 ====

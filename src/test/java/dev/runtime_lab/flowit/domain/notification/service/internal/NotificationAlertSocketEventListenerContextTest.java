@@ -1,6 +1,5 @@
 package dev.runtime_lab.flowit.domain.notification.service.internal;
 
-import dev.runtime_lab.flowit.global.socket.WebSocketPublisher;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,23 +22,16 @@ class NotificationAlertSocketEventListenerContextTest {
 
 		@Bean
 		NotificationAlertSocketEventListener notificationAlertSocketEventListener(
-			NotificationAlertSocketDispatchLoader notificationAlertSocketDispatchLoader,
-			WebSocketPublisher webSocketPublisher
+			NotificationRecipientSocketDeliveryService notificationRecipientSocketDeliveryService
 		) {
 			return new NotificationAlertSocketEventListener(
-				notificationAlertSocketDispatchLoader,
-				webSocketPublisher
+				notificationRecipientSocketDeliveryService
 			);
 		}
 
 		@Bean
-		NotificationAlertSocketDispatchLoader notificationAlertSocketDispatchLoader() {
-			return mock(NotificationAlertSocketDispatchLoader.class);
-		}
-
-		@Bean
-		WebSocketPublisher webSocketPublisher() {
-			return mock(WebSocketPublisher.class);
+		NotificationRecipientSocketDeliveryService notificationRecipientSocketDeliveryService() {
+			return mock(NotificationRecipientSocketDeliveryService.class);
 		}
 
 		@Bean
