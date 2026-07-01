@@ -189,6 +189,13 @@ ifndef::nav-websocket-workspace-members[]
 * link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
 endif::nav-websocket-workspace-members[]
 
+ifdef::nav-websocket-task-notifications[]
+* [.is-current]#작업 알림 WebSocket#
+endif::nav-websocket-task-notifications[]
+ifndef::nav-websocket-task-notifications[]
+* link:websocket-task-notifications.html[작업 알림 WebSocket]
+endif::nav-websocket-task-notifications[]
+
 [.docs-nav-section-title]
 워크스페이스 API
 

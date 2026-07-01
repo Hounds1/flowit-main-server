@@ -1,0 +1,24 @@
+[[integration-notes-0-2-36-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.36 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-07-02 01:11 KST
+|Added
+|`/user/queue/notifications`
+|<<integration-note-0-2-36-volt-2026-07-02-0111-api-websocket,작업 알림이 개인 알림 API와 WebSocket을 대상으로 추가되었습니다.>>
+
+|===
+
+include::../notes/0.2.36-volt/2026-07-02-0111-api-websocket.adoc[]
+
+++++
+</div>
+</details>
+++++

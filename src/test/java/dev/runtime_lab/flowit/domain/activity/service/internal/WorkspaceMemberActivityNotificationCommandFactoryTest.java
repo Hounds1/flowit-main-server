@@ -64,6 +64,8 @@ class WorkspaceMemberActivityNotificationCommandFactoryTest {
 		assertEquals(NotificationLinkType.WORKSPACE_MEMBERS, command.linkType());
 		assertEquals(12L, command.linkWorkspaceId());
 		assertEquals(1782013200L, command.occurredAt());
+		assertEquals("WORKSPACE_ACTIVITY_RECORD:921", command.groupId());
+		assertEquals(10, command.groupSequence());
 	}
 
 	@Test
@@ -92,6 +94,8 @@ class WorkspaceMemberActivityNotificationCommandFactoryTest {
 		assertEquals(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, memberCommand.type());
 		assertEquals(NotificationLinkType.WORKSPACE_MEMBERS, memberCommand.linkType());
 		assertEquals(12L, memberCommand.linkWorkspaceId());
+		assertEquals("WORKSPACE_ACTIVITY_RECORD:921", memberCommand.groupId());
+		assertEquals(10, memberCommand.groupSequence());
 
 		NotificationAlertCreateCommand removedUserCommand = response.get(1);
 		assertEquals(NotificationAlertType.WORKSPACE_ACCESS_REVOKED, removedUserCommand.type());
@@ -99,6 +103,8 @@ class WorkspaceMemberActivityNotificationCommandFactoryTest {
 		assertEquals(null, removedUserCommand.linkWorkspaceId());
 		assertEquals(55L, removedUserCommand.subjectId());
 		assertEquals("Target", removedUserCommand.subjectName());
+		assertEquals("WORKSPACE_ACTIVITY_RECORD:921", removedUserCommand.groupId());
+		assertEquals(20, removedUserCommand.groupSequence());
 	}
 
 	@Test

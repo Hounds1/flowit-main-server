@@ -9,13 +9,13 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationAlert;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationRecipient;
-import dev.runtime_lab.flowit.domain.notification.event.NotificationAlertCreatedEvent;
+import dev.runtime_lab.flowit.domain.notification.event.NotificationRecipientDeliveryRequestedEvent;
+import dev.runtime_lab.flowit.domain.notification.queue.NotificationRecipientDeliveryRetryQueue;
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationAlertRepository;
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationRecipientRepository;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertCreateService;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertResponseAssembler;
-import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertSocketDispatchLoader;
-import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertSocketEventListener;
+import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationRecipientSocketDeliveryService;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.service.internal.WorkspaceMembershipQueryService;
@@ -25,10 +25,12 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +40,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -55,7 +58,10 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 	private final WorkspaceMembershipQueryService workspaceMembershipQueryService =
 		mock(WorkspaceMembershipQueryService.class);
 	private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+	private final ApplicationEventPublisher deliveryEventPublisher = mock(ApplicationEventPublisher.class);
 	private final WebSocketPublisher webSocketPublisher = mock(WebSocketPublisher.class);
+	private final NotificationRecipientDeliveryRetryQueue notificationRecipientDeliveryRetryQueue =
+		mock(NotificationRecipientDeliveryRetryQueue.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1782013300L), ZoneOffset.UTC);
 	private final NotificationAlertResponseAssembler responseAssembler =
 		new NotificationAlertResponseAssembler(JsonMapper.builder().build());
@@ -66,22 +72,29 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 		eventPublisher,
 		clock
 	);
-	private final NotificationAlertSocketDispatchLoader socketDispatchLoader = new NotificationAlertSocketDispatchLoader(
-		notificationAlertRepository,
-		notificationRecipientRepository,
-		responseAssembler
-	);
-	private final NotificationAlertSocketEventListener socketEventListener = new NotificationAlertSocketEventListener(
-		socketDispatchLoader,
-		webSocketPublisher
+	private final NotificationRecipientSocketDeliveryService socketDeliveryService =
+		new NotificationRecipientSocketDeliveryService(
+			notificationRecipientRepository,
+			responseAssembler,
+			webSocketPublisher,
+			(userId, action) -> {
+				action.run();
+				return true;
+			},
+			notificationRecipientDeliveryRetryQueue,
+			deliveryEventPublisher,
+			clock
 	);
 
 	@Test
 	void removedMemberActivityCreatesPerspectiveSpecificAlertsAndPublishesDifferentPayloads() {
 		Map<Long, NotificationAlert> savedAlerts = new LinkedHashMap<>();
+		Map<Long, List<NotificationRecipient>> recipientsByUserId = new LinkedHashMap<>();
 		Map<Long, List<Long>> recipientUserIdsByAlertId = new LinkedHashMap<>();
-		List<NotificationAlertCreatedEvent> createdEvents = new ArrayList<>();
+		List<NotificationRecipientDeliveryRequestedEvent> requestedEvents = new ArrayList<>();
+		Set<Long> socketSentRecipientIds = new HashSet<>();
 		AtomicLong alertIdSequence = new AtomicLong(100L);
+		AtomicLong recipientIdSequence = new AtomicLong(200L);
 
 		when(notificationAlertRepository.save(any(NotificationAlert.class)))
 			.thenAnswer(invocation -> {
@@ -96,6 +109,11 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 			.thenAnswer(invocation -> {
 				@SuppressWarnings("unchecked")
 				List<NotificationRecipient> recipients = invocation.getArgument(0);
+				recipients.forEach(recipient -> {
+					ReflectionTestUtils.setField(recipient, "id", recipientIdSequence.getAndIncrement());
+					recipientsByUserId.computeIfAbsent(recipient.getUserId(), ignored -> new ArrayList<>())
+						.add(recipient);
+				});
 				if (!recipients.isEmpty()) {
 					recipientUserIdsByAlertId.put(
 						recipients.get(0).getNotificationAlert().getId(),
@@ -106,17 +124,28 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 				}
 				return recipients;
 			});
-		when(notificationRecipientRepository.findVisibleUserIdsByNotificationAlertId(anyLong()))
-			.thenAnswer(invocation -> recipientUserIdsByAlertId.getOrDefault(invocation.getArgument(0), List.of()));
+		when(notificationRecipientRepository.findPendingSocketDeliveryByUserId(anyLong(), anyInt()))
+			.thenAnswer(invocation -> recipientsByUserId.getOrDefault(invocation.getArgument(0), List.of())
+				.stream()
+				.filter(recipient -> !socketSentRecipientIds.contains(recipient.getId()))
+				.toList());
+		when(notificationRecipientRepository.markSocketSentIfPending(anyLong(), anyLong()))
+			.thenAnswer(invocation -> {
+				socketSentRecipientIds.add(invocation.getArgument(0));
+				return 1;
+			});
 		when(workspaceMembershipQueryService.findActiveMemberUserIds(12L)).thenReturn(List.of(34L, 35L));
 		when(workspaceMembershipQueryService.findMemberUserId(12L, 55L)).thenReturn(Optional.of(36L));
 		doAnswer(invocation -> {
-			createdEvents.add(invocation.getArgument(0));
+			Object event = invocation.getArgument(0);
+			if (event instanceof NotificationRecipientDeliveryRequestedEvent deliveryEvent) {
+				requestedEvents.add(deliveryEvent);
+			}
 			return null;
 		}).when(eventPublisher).publishEvent(any(Object.class));
 
 		commandFactory.create(removedActivity()).forEach(createService::create);
-		createdEvents.forEach(socketEventListener::publishNotification);
+		requestedEvents.forEach(event -> socketDeliveryService.deliver(event.userId()));
 
 		assertEquals(
 			List.of(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, NotificationAlertType.WORKSPACE_ACCESS_REVOKED),

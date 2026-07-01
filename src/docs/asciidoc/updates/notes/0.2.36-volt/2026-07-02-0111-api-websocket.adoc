@@ -1,3 +1,27 @@
+// integration-note-source-sha256: a4246a748e91299732b75665a12c08dded8d497d9c810a47bed73e082b238ab3
+// integration-note-version: 0.2.36-volt
+// integration-note-time: 2026-07-02-0111
+// integration-note-time-human: 2026-07-02 01:11 KST
+// integration-note-impact: Added
+// integration-note-target: `/user/queue/notifications`
+// integration-note-summary: 작업 알림이 개인 알림 API와 WebSocket을 대상으로 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-36-volt-2026-07-02-0111-api-websocket
+
+[#integration-note-0-2-36-volt-2026-07-02-0111-api-websocket]
+=== 작업 알림이 개인 알림 API와 WebSocket을 대상으로 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.36-volt`
+|Archived At |2026-07-02 01:11 KST
+|Impact |Added
+|Target |`/user/queue/notifications`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
 [.update-note-title]
 Integration Note
 
@@ -34,3 +58,4 @@ Compatibility:: 응답 구조는 유지됩니다.
 * ``NotificationAlertResponse`` 필드 구조는 변경하지 않았습니다.
 * 새 알림 유형과 ``TASK`` / ``TASK_DETAIL`` enum 값이 추가되었으므로 알 수 없는 enum 값에 대한 fallback 처리가 필요할 수 있습니다.
 * WebSocket payload와 목록 API의 ``data.items[]`` 는 같은 알림 응답 구조를 사용합니다.
+--

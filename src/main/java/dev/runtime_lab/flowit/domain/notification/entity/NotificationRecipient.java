@@ -35,6 +35,10 @@ import lombok.NoArgsConstructor;
 		@Index(name = "idx_notification_recipients_user_created", columnList = "user_id, created_at, id"),
 		@Index(name = "idx_notification_recipients_user_seen", columnList = "user_id, seen_at"),
 		@Index(name = "idx_notification_recipients_user_read", columnList = "user_id, read_at"),
+		@Index(
+			name = "idx_notification_recipients_user_socket_delivery",
+			columnList = "user_id, socket_sent_at, hidden_at, created_at, id"
+		),
 		@Index(name = "idx_notification_recipients_alert", columnList = "notification_alert_id")
 	}
 )
@@ -66,4 +70,7 @@ public class NotificationRecipient {
 
 	@Column(name = "hidden_at")
 	private Long hiddenAt;
+
+	@Column(name = "socket_sent_at")
+	private Long socketSentAt;
 }

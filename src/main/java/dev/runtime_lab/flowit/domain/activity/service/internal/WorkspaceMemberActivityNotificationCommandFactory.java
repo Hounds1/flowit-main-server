@@ -15,8 +15,12 @@ import java.util.List;
 import java.util.Optional;
 
 @InternalService
-public class WorkspaceMemberActivityNotificationCommandFactory {
+public class WorkspaceMemberActivityNotificationCommandFactory implements WorkspaceActivityNotificationCommandFactory {
 
+	private static final int WORKSPACE_MEMBER_NOTIFICATION_SEQUENCE = 10;
+	private static final int WORKSPACE_ACCESS_REVOKED_SEQUENCE = 20;
+
+	@Override
 	public List<NotificationAlertCreateCommand> create(WorkspaceActivityRecord record) {
 		if (record.getDomain() != ActivityRecordDomain.WORKSPACE_MEMBER) {
 			return List.of();
@@ -56,8 +60,22 @@ public class WorkspaceMemberActivityNotificationCommandFactory {
 			record.getChangesJson(),
 			linkType,
 			linkType == NotificationLinkType.NONE ? null : record.getWorkspace().getId(),
-			record.getOccurredAt()
+			record.getOccurredAt(),
+			null,
+			notificationGroupId(record),
+			groupSequence(type)
 		);
+	}
+
+	private String notificationGroupId(WorkspaceActivityRecord record) {
+		return "%s:%d".formatted(NotificationSourceType.WORKSPACE_ACTIVITY_RECORD.name(), record.getId());
+	}
+
+	private int groupSequence(NotificationAlertType type) {
+		if (type == NotificationAlertType.WORKSPACE_ACCESS_REVOKED) {
+			return WORKSPACE_ACCESS_REVOKED_SEQUENCE;
+		}
+		return WORKSPACE_MEMBER_NOTIFICATION_SEQUENCE;
 	}
 
 	private Optional<NotificationAlertType> type(ActivityRecordAction action) {

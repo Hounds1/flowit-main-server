@@ -240,13 +240,13 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |알림을 발생시킨 주체입니다. 주체가 없는 이벤트를 대비해 ``actor.id``와 ``actor.name``은 ``null`` 가능성을 고려합니다.
 
 |``subject``
-|알림 대상입니다. 워크스페이스 멤버 알림에서 ``subject.id``는 ``workspaceMemberId``이며 사용자 식별자가 아닙니다.
+|알림 대상입니다. 워크스페이스 멤버 알림에서 ``subject.id``는 ``workspaceMemberId``이며, 작업 알림에서는 ``taskId``입니다.
 
 |``changes[]``
 |알림의 원인이 된 변경 내용입니다. 목록에서는 생략하거나 한 줄로 요약하고, 상세 영역에서 ``element``별 ``from``/``to``를 표시할 수 있습니다.
 
 |``link``
-|클릭 또는 후속 이동에 사용할 힌트입니다. ``link.type``이 ``NONE``이면 워크스페이스 내부 화면으로 이동시키지 않습니다.
+|클릭 또는 후속 이동에 사용할 힌트입니다. ``link.type``이 ``NONE``이면 워크스페이스 내부 화면으로 이동시키지 않습니다. ``TASK_DETAIL``은 ``link.workspaceId``와 ``subject.id``를 함께 사용해 작업 상세 화면으로 이동합니다.
 
 |``read``
 |현재 사용자 기준 읽음 상태입니다. 알림 자체의 전역 상태가 아니라 수신자별 상태입니다.
@@ -277,7 +277,37 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |``WORKSPACE_MEMBER_WITHDRAWN``
 |워크스페이스 구성원
 |Target님이 Flowit 워크스페이스에서 탈퇴했습니다.
+
+|``TASK_CREATED``
+|지정 담당자
+|Actor님이 Login UI 작업을 만들었습니다.
+
+|``TASK_DATE_CHANGED``
+|현재 미발행
+|기간 변경 알림을 위한 예약 타입입니다. 현재는 알림 기록과 WebSocket payload를 생성하지 않습니다.
+
+|``TASK_STATUS_CHANGED``
+|작업 관계자
+|Actor님이 Login UI의 상태를 변경했습니다.
+
+|``TASK_PROGRESS_CHANGED``
+|현재 미발행
+|진행도 변경 알림을 위한 예약 타입입니다. 현재는 알림 기록과 WebSocket payload를 생성하지 않습니다.
+
+|``TASK_ASSIGNED``
+|새 담당자
+|Login UI 작업의 담당자로 할당되었습니다.
+
+|``TASK_UNASSIGNED``
+|직전 담당자
+|Login UI 작업의 담당자에서 해제되었습니다.
 |===
+
+작업 생성과 동시에 담당자가 지정된 경우 같은 작업에 대해 ``TASK_CREATED`` 이후 ``TASK_ASSIGNED``가 순차로 내려올 수 있습니다. 이 경우 클라이언트는 두 알림을 각각 독립 렌더링하되, 수신 순서를 유지하면 "새 작업이 생성되었고 내가 담당자다"라는 흐름을 표현할 수 있습니다.
+
+서버는 같은 수신자에게 전달되는 알림을 수신자별 스트림으로 다루고, 같은 활동에서 파생된 알림 그룹은 내부 순서대로 발송합니다. 그룹 식별 값과 순서 값은 클라이언트 payload에 노출되지 않으므로, 클라이언트는 별도 정렬 키를 추론하지 말고 WebSocket 수신 순서와 목록 API 순서를 기준으로 병합합니다.
+
+작업에서 여러 요소가 동시에 변경되면 서버는 알림 유형별로 ``changes``를 분리합니다. 예를 들어 담당자와 마감일이 함께 바뀐 경우 현재 발행되는 ``TASK_ASSIGNED``는 ``ASSIGNEE``만 포함하고, 마감일 변경 알림은 생성하지 않습니다. 상세 규칙은 link:websocket-task-notifications.html[작업 알림 WebSocket]을 기준으로 확인합니다.
 
 == null 및 값 타입 처리
 
@@ -310,5 +340,6 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 * link:notifications-enum-reference.html[알림 Enum Reference]
 * link:websocket-notifications.html[알림 WebSocket]
 * link:websocket-workspace-members.html[워크스페이스 멤버 WebSocket]
+* link:websocket-task-notifications.html[작업 알림 WebSocket]
 * link:enum-reference.html[Enum Reference]
 * link:api-response.html[공통 응답 포맷]
