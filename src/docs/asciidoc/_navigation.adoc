@@ -66,6 +66,16 @@ ifndef::nav-enum-reference[]
 endif::nav-enum-reference[]
 
 [.docs-nav-section-title]
+대시보드
+
+ifdef::nav-dashboard[]
+* [.is-current]#대시보드 API 조립 가이드#
+endif::nav-dashboard[]
+ifndef::nav-dashboard[]
+* link:dashboard.html[대시보드 API 조립 가이드]
+endif::nav-dashboard[]
+
+[.docs-nav-section-title]
 인증/인가 API
 
 ifdef::nav-auth-login[]
@@ -309,6 +319,13 @@ endif::nav-workspaces-tasks-list[]
 ifndef::nav-workspaces-tasks-list[]
 * link:workspaces-tasks-list.html[작업 목록 조회 API]
 endif::nav-workspaces-tasks-list[]
+
+ifdef::nav-workspaces-tasks-indicators[]
+* [.is-current]#작업 인디케이터 조회 API#
+endif::nav-workspaces-tasks-indicators[]
+ifndef::nav-workspaces-tasks-indicators[]
+* link:workspaces-tasks-indicators.html[작업 인디케이터 조회 API]
+endif::nav-workspaces-tasks-indicators[]
 
 ifdef::nav-workspaces-tasks-get[]
 * [.is-current]#작업 상세 조회 API#

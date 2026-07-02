@@ -11,6 +11,7 @@ import static dev.runtime_lab.flowit.domain.task.validation.TaskConstraints.MIN_
 public record TaskSearchRequest(
 	TaskStatus status,
 	Long assigneeMemberId,
+	Boolean mine,
 	String tag,
 	String keyword,
 
@@ -27,6 +28,6 @@ public record TaskSearchRequest(
 ) {
 
 	public TaskListQuery toQuery() {
-		return new TaskListQuery(status, assigneeMemberId, tag, keyword, dueFrom, dueTo, page, size);
+		return new TaskListQuery(status, assigneeMemberId, mine, tag, keyword, dueFrom, dueTo, page, size);
 	}
 }

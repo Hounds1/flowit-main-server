@@ -2,6 +2,7 @@ package dev.runtime_lab.flowit.domain.task.service;
 
 import dev.runtime_lab.flowit.domain.activity.service.internal.WorkspaceActivityRecorder;
 import dev.runtime_lab.flowit.domain.task.dto.TaskCreateRequest;
+import dev.runtime_lab.flowit.domain.task.dto.TaskListQuery;
 import dev.runtime_lab.flowit.domain.task.dto.TaskProgressUpdateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskStatusUpdateRequest;
 import dev.runtime_lab.flowit.domain.task.entity.Task;
@@ -11,10 +12,12 @@ import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryAction;
 import dev.runtime_lab.flowit.domain.task.entity.TaskPriority;
 import dev.runtime_lab.flowit.domain.task.entity.TaskStatus;
 import dev.runtime_lab.flowit.domain.task.entity.TaskTag;
+import dev.runtime_lab.flowit.domain.task.exception.InvalidTaskRequestException;
 import dev.runtime_lab.flowit.domain.task.repository.TaskChangeHistoryRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskCommentRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskTagRepository;
+import dev.runtime_lab.flowit.domain.task.repository.projection.TaskIndicatorCounts;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
@@ -32,6 +35,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -276,6 +280,84 @@ class TaskServiceTest {
 		assertEquals(1780916300L, task.getUpdatedAt());
 		verify(taskChangeHistoryRepository, never()).save(any(TaskChangeHistory.class));
 		verify(workspaceActivityRecorder, never()).recordTask(any(TaskChangeHistory.class), any());
+	}
+
+	@Test
+	void indicatorsReturnsCountsForUtcToday() {
+		CurrentUser currentUser = new CurrentUser(1L, "actor@example.com", "Actor");
+		User actor = user(1L, "actor@example.com", "Actor");
+		Workspace workspace = workspace(actor);
+		WorkspaceMember actorMember = workspaceMember(10L, workspace, actor);
+
+		when(workspaceAccessService.resolveMemberAccess(currentUser, 1L))
+			.thenReturn(new WorkspaceAccessContext(actor, workspace, actorMember));
+		when(taskRepository.countIndicators(1L, 1780876800L, 1780963200L))
+			.thenReturn(new TaskIndicatorCounts(12L, 3L, 2L));
+
+		var response = taskService.indicators(currentUser, 1L);
+
+		assertEquals(12L, response.total());
+		assertEquals(3L, response.inProgress());
+		assertEquals(2L, response.dueToday());
+		assertEquals(0L, response.pendingReview());
+		verify(workspaceAccessService).resolveMemberAccess(currentUser, 1L);
+		verify(taskRepository).countIndicators(1L, 1780876800L, 1780963200L);
+	}
+
+	@Test
+	void tasksPassesRequesterContextWhenMineFilterIsRequested() {
+		CurrentUser currentUser = new CurrentUser(1L, "actor@example.com", "Actor");
+		User actor = user(1L, "actor@example.com", "Actor");
+		Workspace workspace = workspace(actor);
+		WorkspaceMember actorMember = workspaceMember(10L, workspace, actor);
+		TaskListQuery query = new TaskListQuery(
+			TaskStatus.IN_PROGRESS,
+			null,
+			true,
+			null,
+			null,
+			null,
+			null,
+			0,
+			20
+		);
+
+		when(workspaceAccessService.resolveMemberAccess(currentUser, 1L))
+			.thenReturn(new WorkspaceAccessContext(actor, workspace, actorMember));
+		when(taskRepository.findActiveByWorkspaceId(1L, query, null, 10L, 1L)).thenReturn(List.of());
+		when(taskRepository.countActiveByWorkspaceId(1L, query, null, 10L, 1L)).thenReturn(0L);
+
+		var response = taskService.tasks(currentUser, 1L, query);
+
+		assertEquals(0L, response.getTotalCount());
+		verify(taskRepository).findActiveByWorkspaceId(1L, query, null, 10L, 1L);
+		verify(taskRepository).countActiveByWorkspaceId(1L, query, null, 10L, 1L);
+	}
+
+	@Test
+	void tasksRejectsMineWithAssigneeMemberId() {
+		CurrentUser currentUser = new CurrentUser(1L, "actor@example.com", "Actor");
+		User actor = user(1L, "actor@example.com", "Actor");
+		Workspace workspace = workspace(actor);
+		WorkspaceMember actorMember = workspaceMember(10L, workspace, actor);
+		TaskListQuery query = new TaskListQuery(
+			null,
+			12L,
+			true,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null
+		);
+
+		when(workspaceAccessService.resolveMemberAccess(currentUser, 1L))
+			.thenReturn(new WorkspaceAccessContext(actor, workspace, actorMember));
+
+		assertThrows(InvalidTaskRequestException.class, () -> taskService.tasks(currentUser, 1L, query));
+		verify(taskRepository, never()).findActiveByWorkspaceId(any(), any(), any(), any(), any());
+		verify(taskRepository, never()).countActiveByWorkspaceId(any(), any(), any(), any(), any());
 	}
 
 	@Test

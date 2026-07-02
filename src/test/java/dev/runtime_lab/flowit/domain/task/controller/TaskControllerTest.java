@@ -2,6 +2,7 @@ package dev.runtime_lab.flowit.domain.task.controller;
 
 import dev.runtime_lab.flowit.domain.task.dto.TaskCreateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskCreateResponse;
+import dev.runtime_lab.flowit.domain.task.dto.TaskIndicatorResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskListQuery;
 import dev.runtime_lab.flowit.domain.task.dto.TaskStatusUpdateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskSummaryResponse;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -131,12 +133,33 @@ class TaskControllerTest {
 		TaskListQuery query = queryCaptor.getValue();
 		assertEquals(TaskStatus.IN_PROGRESS, query.status());
 		assertEquals(12L, query.assigneeMemberId());
+		assertEquals(null, query.mine());
 		assertEquals("frontend", query.tag());
 		assertEquals("login", query.keyword());
 		assertEquals(1780876800L, query.dueFrom());
 		assertEquals(1781222400L, query.dueTo());
 		assertEquals(2, query.page());
 		assertEquals(30, query.size());
+	}
+
+	@Test
+	void tasksBindsMineSearchRequest() throws Exception {
+		ArgumentCaptor<TaskListQuery> queryCaptor = ArgumentCaptor.forClass(TaskListQuery.class);
+
+		when(taskService.tasks(any(CurrentUser.class), eq(1L), any(TaskListQuery.class)))
+			.thenReturn(ApiListData.of(List.<TaskSummaryResponse>of(), 0L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("7", "user@example.com", "김철수"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/tasks", 1L)
+				.param("mine", "true")
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true));
+
+		verify(taskService).tasks(any(CurrentUser.class), eq(1L), queryCaptor.capture());
+		assertTrue(queryCaptor.getValue().mineOrDefault());
 	}
 
 	@Test
@@ -152,6 +175,26 @@ class TaskControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.success").value(false))
 			.andExpect(jsonPath("$.error.code").value("VALIDATION_400_001"));
+	}
+
+	@Test
+	void indicatorsReturnsTaskIndicators() throws Exception {
+		when(taskService.indicators(any(CurrentUser.class), eq(1L)))
+			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 0L));
+		SecurityContextHolder.getContext().setAuthentication(
+			new JwtAuthenticationToken(jwt("7", "user@example.com", "김철수"), List.of())
+		);
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/tasks/indicators", 1L)
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data.total").value(12L))
+			.andExpect(jsonPath("$.data.inProgress").value(3L))
+			.andExpect(jsonPath("$.data.dueToday").value(2L))
+			.andExpect(jsonPath("$.data.pendingReview").value(0L));
+
+		verify(taskService).indicators(any(CurrentUser.class), eq(1L));
 	}
 
 	@Test

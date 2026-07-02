@@ -525,6 +525,53 @@ table.api-index td code {
   word-break: break-word;
 }
 
+table.dashboard-api-table {
+  table-layout: auto;
+}
+
+table.dashboard-api-table th:nth-child(1),
+table.dashboard-api-table td:nth-child(1) {
+  width: 56px;
+  white-space: nowrap;
+}
+
+table.dashboard-api-table th:nth-child(2),
+table.dashboard-api-table td:nth-child(2) {
+  width: 22%;
+}
+
+table.dashboard-api-table th:nth-child(3),
+table.dashboard-api-table td:nth-child(3) {
+  width: 84px;
+  white-space: nowrap;
+}
+
+table.dashboard-api-table th:nth-child(4),
+table.dashboard-api-table td:nth-child(4) {
+  width: 42%;
+}
+
+table.dashboard-api-table th:nth-child(5),
+table.dashboard-api-table td:nth-child(5) {
+  width: 25%;
+}
+
+table.dashboard-api-table td:nth-child(4) code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  table.dashboard-api-table td:nth-child(4) code {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
 table.error-code-table td {
   color: #344054;
   font-size: 14px;

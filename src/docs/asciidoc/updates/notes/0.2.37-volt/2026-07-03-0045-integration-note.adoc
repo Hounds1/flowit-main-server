@@ -1,3 +1,27 @@
+// integration-note-source-sha256: 4f2bc3bc76732338a6a6a9167f54c2f943db407e0843a6880ea61883aabf811a
+// integration-note-version: 0.2.37-volt
+// integration-note-time: 2026-07-03-0045
+// integration-note-time-human: 2026-07-03 00:45 KST
+// integration-note-impact: Added
+// integration-note-target: `GET /v1/workspaces/{workspaceId}/tasks/indicators`
+// integration-note-summary: 대시보드 작업 인디케이터와 내 작업 조회 필터가 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-37-volt-2026-07-03-0045-integration-note
+
+[#integration-note-0-2-37-volt-2026-07-03-0045-integration-note]
+=== 대시보드 작업 인디케이터와 내 작업 조회 필터가 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.37-volt`
+|Archived At |2026-07-03 00:45 KST
+|Impact |Added
+|Target |`GET /v1/workspaces/{workspaceId}/tasks/indicators`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
 [.update-note-title]
 Integration Note
 
@@ -45,3 +69,4 @@ Carryover:: 응답 구조는 유지됩니다.
 * ``NotificationAlertResponse`` 필드 구조는 변경하지 않았습니다.
 * 새 알림 유형과 ``TASK`` / ``TASK_DETAIL`` enum 값이 추가되었으므로 알 수 없는 enum 값에 대한 fallback 처리가 필요할 수 있습니다.
 * WebSocket payload와 목록 API의 ``data.items[]`` 는 같은 알림 응답 구조를 사용합니다.
+--

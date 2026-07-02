@@ -8,6 +8,7 @@ import static dev.runtime_lab.flowit.domain.task.validation.TaskConstraints.MIN_
 public record TaskListQuery(
 	TaskStatus status,
 	Long assigneeMemberId,
+	Boolean mine,
 	String tag,
 	String keyword,
 	Long dueFrom,
@@ -22,6 +23,10 @@ public record TaskListQuery(
 		}
 
 		return page;
+	}
+
+	public boolean mineOrDefault() {
+		return Boolean.TRUE.equals(mine);
 	}
 
 	public int sizeOrDefault() {

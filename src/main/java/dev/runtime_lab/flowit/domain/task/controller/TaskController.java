@@ -4,6 +4,7 @@ import dev.runtime_lab.flowit.domain.task.dto.TaskCreateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskCreateResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskDetailResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryResponse;
+import dev.runtime_lab.flowit.domain.task.dto.TaskIndicatorResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskProgressUpdateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskSearchRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskStatusUpdateRequest;
@@ -56,6 +57,14 @@ public class TaskController {
 		@Valid @ModelAttribute TaskSearchRequest request
 	) {
 		return taskService.tasks(currentUser, workspaceId, request.toQuery());
+	}
+
+	@GetMapping("/indicators")
+	public TaskIndicatorResponse indicators(
+		@AuthenticatedUser CurrentUser currentUser,
+		@PathVariable Long workspaceId
+	) {
+		return taskService.indicators(currentUser, workspaceId);
 	}
 
 	@GetMapping("/{taskId}")
