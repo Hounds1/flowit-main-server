@@ -7,6 +7,7 @@ import dev.runtime_lab.flowit.domain.task.dto.TaskCommentResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskDetailResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryChangeResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryResponse;
+import dev.runtime_lab.flowit.domain.task.dto.TaskIndicatorResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskListQuery;
 import dev.runtime_lab.flowit.domain.task.dto.TaskProgressUpdateRequest;
 import dev.runtime_lab.flowit.domain.task.dto.TaskStatusUpdateRequest;
@@ -25,6 +26,7 @@ import dev.runtime_lab.flowit.domain.task.repository.TaskChangeHistoryRepository
 import dev.runtime_lab.flowit.domain.task.repository.TaskCommentRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskTagRepository;
+import dev.runtime_lab.flowit.domain.task.repository.projection.TaskIndicatorCounts;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
@@ -35,6 +37,7 @@ import dev.runtime_lab.flowit.global.web.response.ApiListData;
 import java.text.Normalizer;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -165,19 +168,49 @@ public class TaskService {
 
 	@Transactional(readOnly = true)
 	public ApiListData<TaskSummaryResponse> tasks(CurrentUser currentUser, Long workspaceId, TaskListQuery query) {
-		workspaceAccessService.resolveMemberAccess(currentUser, workspaceId);
+		WorkspaceAccessContext access = workspaceAccessService.resolveMemberAccess(currentUser, workspaceId);
+		validateMineFilter(query);
 
 		String normalizedTag = normalizeOptionalTag(query.tag());
-		List<Task> tasks = taskRepository.findActiveByWorkspaceId(workspaceId, query, normalizedTag);
+		List<Task> tasks = taskRepository.findActiveByWorkspaceId(
+			workspaceId,
+			query,
+			normalizedTag,
+			access.membership().getId(),
+			access.requester().getId()
+		);
 		Map<Long, List<String>> tagsByTaskId = tagsByTaskId(tasks);
 
 		List<TaskSummaryResponse> responses = tasks.stream()
 			.map(task -> TaskSummaryResponse.from(task, tagsByTaskId.getOrDefault(task.getId(), List.of())))
 			.toList();
 
-		long totalCount = taskRepository.countActiveByWorkspaceId(workspaceId, query, normalizedTag);
+		long totalCount = taskRepository.countActiveByWorkspaceId(
+			workspaceId,
+			query,
+			normalizedTag,
+			access.membership().getId(),
+			access.requester().getId()
+		);
 
 		return ApiListData.of(responses, totalCount);
+	}
+
+	@Transactional(readOnly = true)
+	public TaskIndicatorResponse indicators(CurrentUser currentUser, Long workspaceId) {
+		workspaceAccessService.resolveMemberAccess(currentUser, workspaceId);
+
+		LocalDate today = LocalDate.now(clock);
+		long todayStart = today.atStartOfDay(clock.getZone()).toEpochSecond();
+		long tomorrowStart = today.plusDays(1).atStartOfDay(clock.getZone()).toEpochSecond();
+		TaskIndicatorCounts counts = taskRepository.countIndicators(workspaceId, todayStart, tomorrowStart);
+
+		return new TaskIndicatorResponse(
+			counts.total(),
+			counts.inProgress(),
+			counts.dueToday(),
+			0L
+		);
 	}
 
 	@Transactional(readOnly = true)
@@ -300,6 +333,12 @@ public class TaskService {
 	private Task findTaskForUpdate(Long workspaceId, Long taskId) {
 		return taskRepository.findActiveByWorkspaceIdAndTaskIdForUpdate(workspaceId, taskId)
 			.orElseThrow(TaskNotFoundException::new);
+	}
+
+	private void validateMineFilter(TaskListQuery query) {
+		if (query.mineOrDefault() && query.assigneeMemberId() != null) {
+			throw new InvalidTaskRequestException("mine 필터는 assigneeMemberId와 함께 사용할 수 없습니다.");
+		}
 	}
 
 	private ApiListData<TaskCommentResponse> initialCommentPage(Long workspaceId, Long taskId, Long requesterUserId) {

@@ -1,0 +1,24 @@
+[[integration-notes-0-2-37-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.37 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-07-03 00:45 KST
+|Added
+|`GET /v1/workspaces/{workspaceId}/tasks/indicators`
+|<<integration-note-0-2-37-volt-2026-07-03-0045-integration-note,대시보드 작업 인디케이터와 내 작업 조회 필터가 추가되었습니다.>>
+
+|===
+
+include::../notes/0.2.37-volt/2026-07-03-0045-integration-note.adoc[]
+
+++++
+</div>
+</details>
+++++

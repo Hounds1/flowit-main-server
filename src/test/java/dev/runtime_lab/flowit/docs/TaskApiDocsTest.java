@@ -11,6 +11,7 @@ import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryActorResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryChangeResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskHistoryTargetResponse;
+import dev.runtime_lab.flowit.domain.task.dto.TaskIndicatorResponse;
 import dev.runtime_lab.flowit.domain.task.dto.TaskListQuery;
 import dev.runtime_lab.flowit.domain.task.dto.TaskSummaryResponse;
 import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryAction;
@@ -45,6 +46,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.booleanParameter;
 import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.numberParameter;
 import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.stringArrayElements;
 import static dev.runtime_lab.flowit.docs.support.DocumentedTypes.stringParameter;
@@ -161,7 +163,7 @@ class TaskApiDocsTest {
 		mockMvc.perform(get("/v1/workspaces/{workspaceId}/tasks", 2001L)
 				.header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
 				.param("status", "IN_PROGRESS")
-				.param("assigneeMemberId", "3002")
+				.param("mine", "true")
 				.param("tag", "frontend")
 				.param("keyword", "login")
 				.param("dueFrom", "1780876800")
@@ -178,6 +180,7 @@ class TaskApiDocsTest {
 				queryParameters(
 					stringParameter("status").description("작업 상태 필터입니다. link:workspaces-tasks-enum-reference.html#task-status[TaskStatus]를 참고합니다.").optional(),
 					numberParameter("assigneeMemberId").description("담당 워크스페이스 멤버 식별자 필터입니다. 미할당 작업만 조회하는 필터는 아직 제공하지 않습니다.").optional(),
+					booleanParameter("mine").description("``true``이면 현재 사용자가 담당자인 작업 또는 현재 사용자가 생성한 작업을 조회합니다. 현재 사용자가 생성했고 다른 담당자가 지정된 작업도 포함합니다. ``assigneeMemberId``와 동시에 사용할 수 없습니다.").optional(),
 					stringParameter("tag").description("태그 이름 필터입니다. 서버는 정규화된 태그 이름으로 검색합니다.").optional(),
 					stringParameter("keyword").description("작업 제목/설명 검색 키워드입니다.").optional(),
 					numberParameter("dueFrom").description("마감 예정일 검색 시작 시각입니다. Unix epoch seconds 기준입니다.").optional(),
@@ -187,6 +190,26 @@ class TaskApiDocsTest {
 				),
 				responseHeaders(contentTypeResponseHeader()),
 				responseFields(taskListResponseFields())
+			));
+	}
+
+	@Test
+	void taskIndicators() throws Exception {
+		when(taskService.indicators(any(CurrentUser.class), eq(2001L)))
+			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 0L));
+		authenticate();
+
+		mockMvc.perform(get("/v1/workspaces/{workspaceId}/tasks/indicators", 2001L)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+				.accept(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk())
+			.andDo(document("workspaces-tasks-indicators",
+				preprocessRequest(prettyPrint()),
+				preprocessResponse(prettyPrint()),
+				workspacePathParameters("작업 인디케이터를 조회할 워크스페이스 식별자입니다."),
+				authRequestHeaders(),
+				responseHeaders(contentTypeResponseHeader()),
+				responseFields(taskIndicatorResponseFields())
 			));
 	}
 
@@ -457,6 +480,18 @@ class TaskApiDocsTest {
 			fieldWithPath("data.items[].createdAt").type(JsonFieldType.NUMBER).description("작업 생성 시각입니다. Unix epoch seconds 기준입니다."),
 			fieldWithPath("data.items[].updatedAt").type(JsonFieldType.NUMBER).description("작업 최종 수정 시각입니다. Unix epoch seconds 기준입니다."),
 			fieldWithPath("data.totalCount").type(JsonFieldType.NUMBER).description("검색 조건에 맞는 전체 작업 수입니다."),
+			fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
+		};
+	}
+
+	private org.springframework.restdocs.payload.FieldDescriptor[] taskIndicatorResponseFields() {
+		return new org.springframework.restdocs.payload.FieldDescriptor[] {
+			fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 처리 성공 여부입니다."),
+			fieldWithPath("data").type(JsonFieldType.OBJECT).description("작업 인디케이터 데이터입니다."),
+			fieldWithPath("data.total").type(JsonFieldType.NUMBER).description("삭제되지 않은 전체 업무 수입니다."),
+			fieldWithPath("data.inProgress").type(JsonFieldType.NUMBER).description("삭제되지 않은 진행 중 업무 수입니다."),
+			fieldWithPath("data.dueToday").type(JsonFieldType.NUMBER).description("오늘 마감인 미완료 업무 수입니다. 서버 Clock의 일자 경계를 기준으로 계산합니다."),
+			fieldWithPath("data.pendingReview").type(JsonFieldType.NUMBER).description("리뷰 대기 업무 수입니다. 리뷰 기능이 구현되기 전까지 항상 ``0``입니다."),
 			fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 		};
 	}

@@ -1,12 +1,17 @@
 package dev.runtime_lab.flowit.domain.task.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import dev.runtime_lab.flowit.domain.task.dto.TaskListQuery;
 import dev.runtime_lab.flowit.domain.task.entity.QTask;
 import dev.runtime_lab.flowit.domain.task.entity.QTaskTag;
 import dev.runtime_lab.flowit.domain.task.entity.Task;
+import dev.runtime_lab.flowit.domain.task.entity.TaskStatus;
+import dev.runtime_lab.flowit.domain.task.repository.projection.TaskIndicatorCounts;
 import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMember;
 import dev.runtime_lab.flowit.global.jpa.repository.CustomJpaRepo;
 import jakarta.persistence.EntityManager;
@@ -64,7 +69,13 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 		);
 	}
 
-	public List<Task> findActiveByWorkspaceId(Long workspaceId, TaskListQuery query, String normalizedTag) {
+	public List<Task> findActiveByWorkspaceId(
+		Long workspaceId,
+		TaskListQuery query,
+		String normalizedTag,
+		Long requesterMemberId,
+		Long requesterUserId
+	) {
 		QTask task = QTask.task;
 		QWorkspaceMember assignee = new QWorkspaceMember("assignee");
 
@@ -72,22 +83,65 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 			.leftJoin(task.assignee, assignee).fetchJoin()
 			.leftJoin(assignee.user).fetchJoin()
 			.join(task.workspace).fetchJoin()
-			.where(condition(workspaceId, query, normalizedTag))
+			.where(condition(workspaceId, query, normalizedTag, requesterMemberId, requesterUserId))
 			.orderBy(task.updatedAt.desc(), task.id.desc())
 			.offset((long) query.pageOrDefault() * query.sizeOrDefault())
 			.limit(query.sizeOrDefault())
 			.fetch();
 	}
 
-	public long countActiveByWorkspaceId(Long workspaceId, TaskListQuery query, String normalizedTag) {
+	public long countActiveByWorkspaceId(
+		Long workspaceId,
+		TaskListQuery query,
+		String normalizedTag,
+		Long requesterMemberId,
+		Long requesterUserId
+	) {
 		QTask task = QTask.task;
 
 		Long count = queryFactory.select(task.id.count())
 			.from(task)
-			.where(condition(workspaceId, query, normalizedTag))
+			.where(condition(workspaceId, query, normalizedTag, requesterMemberId, requesterUserId))
 			.fetchOne();
 
 		return count == null ? 0L : count;
+	}
+
+	public TaskIndicatorCounts countIndicators(Long workspaceId, Long todayStart, Long tomorrowStart) {
+		QTask task = QTask.task;
+		NumberExpression<Long> totalCount = task.id.count();
+		NumberExpression<Long> inProgressCount = new CaseBuilder()
+			.when(task.status.eq(TaskStatus.IN_PROGRESS))
+			.then(1L)
+			.otherwise(0L)
+			.sum();
+		NumberExpression<Long> dueTodayCount = new CaseBuilder()
+			.when(
+				task.status.ne(TaskStatus.DONE)
+					.and(task.dueDate.goe(todayStart))
+					.and(task.dueDate.lt(tomorrowStart))
+			)
+			.then(1L)
+			.otherwise(0L)
+			.sum();
+
+		Tuple counts = queryFactory.select(totalCount, inProgressCount, dueTodayCount)
+			.from(task)
+			.where(
+				task.workspace.id.eq(workspaceId),
+				task.deletedAt.isNull()
+			)
+			.fetchOne();
+
+		if (counts == null) {
+			return TaskIndicatorCounts.empty();
+		}
+
+		return new TaskIndicatorCounts(
+			countValue(counts.get(totalCount)),
+			countValue(counts.get(inProgressCount)),
+			countValue(counts.get(dueTodayCount))
+		);
 	}
 
 	public Optional<Task> findActiveByWorkspaceIdAndTitle(Long workspaceId, String title) {
@@ -104,7 +158,17 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 		);
 	}
 
-	private BooleanBuilder condition(Long workspaceId, TaskListQuery query, String normalizedTag) {
+	private long countValue(Long value) {
+		return value == null ? 0L : value;
+	}
+
+	private BooleanBuilder condition(
+		Long workspaceId,
+		TaskListQuery query,
+		String normalizedTag,
+		Long requesterMemberId,
+		Long requesterUserId
+	) {
 		QTask task = QTask.task;
 		QTaskTag taskTag = QTaskTag.taskTag;
 		BooleanBuilder builder = new BooleanBuilder()
@@ -116,6 +180,10 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 		}
 		if (query.assigneeMemberId() != null) {
 			builder.and(task.assignee.id.eq(query.assigneeMemberId()));
+		}
+		if (query.mineOrDefault()) {
+			builder.and(task.assignee.id.eq(requesterMemberId)
+				.or(task.createdBy.id.eq(requesterUserId)));
 		}
 		if (query.keyword() != null && !query.keyword().isBlank()) {
 			String keyword = query.keyword().trim();

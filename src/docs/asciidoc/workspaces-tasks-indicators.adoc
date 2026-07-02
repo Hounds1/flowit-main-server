@@ -1,0 +1,76 @@
+= 작업 인디케이터 조회 API
+:doctype: book
+:sectanchors:
+:sectlinks:
+:version-label: 버전
+:source-language: http
+:stylesheet: restdocs-modern.css
+:stylesdir: css
+:linkcss:
+:nav-workspaces-tasks-indicators:
+:breadcrumb-section: 작업 API
+:breadcrumb-current: 작업 인디케이터 조회 API
+
+include::_navigation.adoc[]
+
+include::_breadcrumb.adoc[]
+
+== 작업 인디케이터 조회
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|메서드 |``GET``
+|경로 |``/v1/workspaces/{workspaceId}/tasks/indicators``
+|API 상태 |[.badge.stability.experimental]#Experimental#
+|목적 |대시보드에 표시할 작업 수 인디케이터를 조회합니다.
+|인증 |JWT access token이 필요합니다.
+|권한 |요청자는 해당 워크스페이스의 활성 멤버여야 합니다.
+|집계 |전체 업무, 진행 중, 오늘 마감, 리뷰 대기 수를 반환합니다.
+|응답 |``200 OK``
+|===
+
+=== HTTP 요청
+
+include::{snippets}/workspaces-tasks-indicators/http-request.adoc[]
+
+=== cURL 요청
+
+include::{snippets}/workspaces-tasks-indicators/curl-request.adoc[]
+
+=== 경로 파라미터
+
+include::{snippets}/workspaces-tasks-indicators/path-parameters.adoc[]
+
+=== 요청 헤더
+
+include::{snippets}/workspaces-tasks-indicators/request-headers.adoc[]
+
+=== HTTP 응답
+
+include::{snippets}/workspaces-tasks-indicators/http-response.adoc[]
+
+=== 응답 헤더
+
+include::{snippets}/workspaces-tasks-indicators/response-headers.adoc[]
+
+=== 응답 필드
+
+include::{snippets}/workspaces-tasks-indicators/response-fields.adoc[]
+
+:api-error-auth-required:
+:api-error-workspace-member-required:
+:api-error-workspace-not-found:
+:api-error-internal-server:
+include::_api-errors.adoc[]
+
+[.related-docs]
+== 관련 문서
+
+* link:workspaces-tasks-list.html[작업 목록 조회 API]
+* link:workspaces-tasks-get.html[작업 상세 조회 API]
+* link:workspaces-tasks-status-update.html[작업 상태 변경 API]
+* link:workspaces-activity-records.html[워크스페이스 최근 활동 API]
+* link:workspaces-tasks-enum-reference.html[작업 Enum Reference]
+* link:enum-reference.html[Enum Reference]
+* link:api-response.html[공통 응답 포맷]
+* link:error-codes.html[에러 코드]
