@@ -7,10 +7,8 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceT
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectType;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationAlert;
-import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
-import dev.runtime_lab.flowit.domain.user.repository.projection.UserProfileProjection;
-import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
-import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMemberProfileProjection;
+import dev.runtime_lab.flowit.domain.user.service.internal.UserProfileQueryService;
+import dev.runtime_lab.flowit.domain.workspace.service.internal.WorkspaceMembershipQueryService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -22,15 +20,16 @@ import static org.mockito.Mockito.when;
 
 class NotificationProfileResolverTest {
 
-	private final UserRepository userRepository = mock(UserRepository.class);
-	private final WorkspaceMemberRepository workspaceMemberRepository = mock(WorkspaceMemberRepository.class);
+	private final UserProfileQueryService userProfileQueryService = mock(UserProfileQueryService.class);
+	private final WorkspaceMembershipQueryService workspaceMembershipQueryService =
+		mock(WorkspaceMembershipQueryService.class);
 	private final NotificationProfileResolver resolver =
-		new NotificationProfileResolver(userRepository, workspaceMemberRepository);
+		new NotificationProfileResolver(userProfileQueryService, workspaceMembershipQueryService);
 
 	@Test
 	void resolvesActorProfileForTaskChangeAlerts() {
-		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndUserId(12L, 34L))
-			.thenReturn(Optional.of(new WorkspaceMemberProfileProjection(301L, 34L, "Actor", 3001L)));
+		when(workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndUserId(12L, 34L))
+			.thenReturn(Optional.of("/v1/workspaces/12/members/301/profile-image"));
 
 		List<NotificationAlertType> actorProfileTypes = List.of(
 			NotificationAlertType.TASK_CREATED,
@@ -49,8 +48,8 @@ class NotificationProfileResolverTest {
 
 	@Test
 	void resolvesRecipientProfileForDirectRecipientAlerts() {
-		when(userRepository.findActiveProfileById(36L))
-			.thenReturn(Optional.of(new UserProfileProjection(36L, "Recipient", 3002L)));
+		when(userProfileQueryService.findCurrentUserProfileImageUrl(36L))
+			.thenReturn(Optional.of("/v1/users/me/profile-image"));
 
 		List<NotificationAlertType> recipientProfileTypes = List.of(
 			NotificationAlertType.TASK_ASSIGNED,
@@ -67,8 +66,8 @@ class NotificationProfileResolverTest {
 
 	@Test
 	void resolvesCurrentUserProfileForWorkspaceAccessRevoked() {
-		when(userRepository.findActiveProfileById(36L))
-			.thenReturn(Optional.of(new UserProfileProjection(36L, "Current Name", 3002L)));
+		when(userProfileQueryService.findCurrentUserProfileImageUrl(36L))
+			.thenReturn(Optional.of("/v1/users/me/profile-image"));
 
 		NotificationProfileResponse profile = resolver.resolve(
 			alert(NotificationAlertType.WORKSPACE_ACCESS_REVOKED),
@@ -81,8 +80,8 @@ class NotificationProfileResolverTest {
 
 	@Test
 	void resolvesSubjectProfileForActiveWorkspaceMemberAlerts() {
-		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndMemberId(12L, 55L))
-			.thenReturn(Optional.of(new WorkspaceMemberProfileProjection(55L, 36L, "Target", 3003L)));
+		when(workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndMemberId(12L, 55L))
+			.thenReturn(Optional.of("/v1/workspaces/12/members/55/profile-image"));
 
 		List<NotificationAlertType> subjectProfileTypes = List.of(
 			NotificationAlertType.WORKSPACE_MEMBER_JOINED,
@@ -99,7 +98,7 @@ class NotificationProfileResolverTest {
 
 	@Test
 	void returnsNullImageWhenSubjectMemberIsNotActive() {
-		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndMemberId(12L, 55L))
+		when(workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndMemberId(12L, 55L))
 			.thenReturn(Optional.empty());
 
 		List<NotificationAlertType> inactiveSubjectTypes = List.of(
