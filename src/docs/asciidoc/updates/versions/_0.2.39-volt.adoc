@@ -1,0 +1,24 @@
+[[integration-notes-0-2-39-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.39 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-07-09 00:04 KST
+|Maint
+|`NotificationAlertResponse`
+|<<integration-note-0-2-39-volt-2026-07-09-0004-integration-note,내부 검증 변경으로 원문을 유지합니다.>>
+
+|===
+
+include::../notes/0.2.39-volt/2026-07-09-0004-integration-note.adoc[]
+
+++++
+</div>
+</details>
+++++
