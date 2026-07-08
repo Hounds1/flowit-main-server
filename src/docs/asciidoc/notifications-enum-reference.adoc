@@ -56,6 +56,13 @@ include::{snippets}/enum-reference/notification-subject-type.adoc[]
 
 include::{snippets}/enum-reference/notification-link-type.adoc[]
 
+[#notification-profile-source-type]
+== NotificationProfileSourceType
+
+알림 카드에 대표로 표시할 프로필 이미지의 기준입니다.
+
+include::{snippets}/enum-reference/notification-profile-source-type.adoc[]
+
 == 관련 변경 요소
 
 워크스페이스 멤버 알림의 ``changes[].element``는 현재 최근 활동의 변경 요소와 같은 의미 이름을 사용합니다. 값의 원본 설명은 link:workspaces-activity-records-enum-reference.html#activity-change-element[ActivityChangeElement]를 참고합니다.

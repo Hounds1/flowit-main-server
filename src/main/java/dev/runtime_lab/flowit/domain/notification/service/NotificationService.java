@@ -4,7 +4,6 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertListRespo
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertReadAllResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertSeenResponse;
-import dev.runtime_lab.flowit.domain.notification.entity.NotificationRecipient;
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationRecipientRepository;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertResponseAssembler;
 import dev.runtime_lab.flowit.domain.user.entity.User;
@@ -39,7 +38,7 @@ public class NotificationService {
 		List<NotificationAlertResponse> alerts = notificationRecipientRepository
 			.findVisibleByUserId(requester.getId(), pageValue, sizeValue)
 			.stream()
-			.map(this::alertResponse)
+			.map(notificationAlertResponseAssembler::toResponse)
 			.toList();
 
 		long totalCount = notificationRecipientRepository.countVisibleByUserId(requester.getId());
@@ -66,13 +65,6 @@ public class NotificationService {
 		notificationRecipientRepository.markVisibleUnseenAsSeenByUserId(requester.getId(), readAt);
 
 		return new NotificationAlertReadAllResponse(readAt, readCount);
-	}
-
-	private NotificationAlertResponse alertResponse(NotificationRecipient recipient) {
-		return notificationAlertResponseAssembler.toResponse(
-			recipient.getNotificationAlert(),
-			recipient.getReadAt() != null
-		);
 	}
 
 	private int page(Integer page) {

@@ -1,7 +1,9 @@
 package dev.runtime_lab.flowit.domain.workspace.service.internal;
 
-import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
+import dev.runtime_lab.flowit.domain.workspace.dto.WorkspaceMemberResponse;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
+import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMemberProfileProjection;
+import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
 import dev.runtime_lab.flowit.domain.workspace.service.internal.contract.WorkspaceMembershipSummary;
 import dev.runtime_lab.flowit.global.stereotype.InternalService;
 import java.util.List;
@@ -33,6 +35,18 @@ public class WorkspaceMembershipQueryService {
 		return workspaceMemberRepository.findUserIdByWorkspaceIdAndMemberId(workspaceId, memberId);
 	}
 
+	@Transactional(readOnly = true)
+	public Optional<String> findActiveProfileImageUrlByWorkspaceIdAndMemberId(Long workspaceId, Long memberId) {
+		return workspaceMemberRepository.findActiveProfileByWorkspaceIdAndMemberId(workspaceId, memberId)
+			.map(profile -> profileImageUrl(workspaceId, profile));
+	}
+
+	@Transactional(readOnly = true)
+	public Optional<String> findActiveProfileImageUrlByWorkspaceIdAndUserId(Long workspaceId, Long userId) {
+		return workspaceMemberRepository.findActiveProfileByWorkspaceIdAndUserId(workspaceId, userId)
+			.map(profile -> profileImageUrl(workspaceId, profile));
+	}
+
 	private WorkspaceMembershipSummary summary(WorkspaceMembershipProjection projection) {
 		return new WorkspaceMembershipSummary(
 			projection.workspaceId(),
@@ -41,6 +55,14 @@ public class WorkspaceMembershipQueryService {
 			projection.memberCount(),
 			projection.role(),
 			projection.joinedAt()
+		);
+	}
+
+	private String profileImageUrl(Long workspaceId, WorkspaceMemberProfileProjection profile) {
+		return WorkspaceMemberResponse.profileImageUrl(
+			workspaceId,
+			profile.memberId(),
+			profile.profileImageFileId()
 		);
 	}
 }

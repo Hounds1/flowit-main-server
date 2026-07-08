@@ -77,9 +77,6 @@ public class NotificationAlert {
 	@Column(name = "actor_name_snapshot", length = 100)
 	private String actorNameSnapshot;
 
-	@Column(name = "actor_profile_image_url", length = 500)
-	private String actorProfileImageUrl;
-
 	@Enumerated(EnumType.STRING)
 	@Column(name = "subject_type", nullable = false, length = 40)
 	private NotificationSubjectType subjectType;

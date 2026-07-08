@@ -6,6 +6,8 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileResponse;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectResponse;
@@ -242,8 +244,9 @@ class WebSocketConnectionIntegrationTest {
 			id,
 			type,
 			1782013200L,
+			new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),
-			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor", null),
+			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor"),
 			new NotificationSubjectResponse(NotificationSubjectType.WORKSPACE_MEMBER, 55L, "Target"),
 			List.of(),
 			new NotificationLinkResponse(linkType, linkWorkspaceId),

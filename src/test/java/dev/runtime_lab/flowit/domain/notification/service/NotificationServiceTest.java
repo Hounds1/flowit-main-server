@@ -63,8 +63,8 @@ class NotificationServiceTest {
 		when(notificationRecipientRepository.countVisibleByUserId(7L)).thenReturn(2L);
 		when(notificationRecipientRepository.countVisibleUnreadByUserId(7L)).thenReturn(1L);
 		when(notificationRecipientRepository.countVisibleUnseenByUserId(7L)).thenReturn(1L);
-		when(notificationAlertResponseAssembler.toResponse(unreadAlert, false)).thenReturn(unreadResponse);
-		when(notificationAlertResponseAssembler.toResponse(readAlert, true)).thenReturn(readResponse);
+		when(notificationAlertResponseAssembler.toResponse(unreadRecipient)).thenReturn(unreadResponse);
+		when(notificationAlertResponseAssembler.toResponse(readRecipient)).thenReturn(readResponse);
 
 		NotificationAlertListResponse response = notificationService.alerts(currentUser, null, null);
 

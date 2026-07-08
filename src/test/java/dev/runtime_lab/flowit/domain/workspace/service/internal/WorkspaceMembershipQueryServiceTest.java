@@ -1,6 +1,7 @@
 package dev.runtime_lab.flowit.domain.workspace.service.internal;
 
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
+import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMemberProfileProjection;
 import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
 import dev.runtime_lab.flowit.domain.workspace.repository.WorkspaceMemberRepository;
 import dev.runtime_lab.flowit.domain.workspace.service.internal.contract.WorkspaceMembershipSummary;
@@ -58,5 +59,42 @@ class WorkspaceMembershipQueryServiceTest {
 		assertTrue(userId.isPresent());
 		assertEquals(1L, userId.get());
 		verify(workspaceMemberRepository).findUserIdByWorkspaceIdAndMemberId(10L, 100L);
+	}
+
+	@Test
+	void findActiveProfileImageUrlByWorkspaceIdAndMemberIdConvertsRepositoryProjection() {
+		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndMemberId(10L, 100L))
+			.thenReturn(Optional.of(new WorkspaceMemberProfileProjection(100L, 1L, "User", 300L)));
+
+		Optional<String> profileImageUrl =
+			workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndMemberId(10L, 100L);
+
+		assertTrue(profileImageUrl.isPresent());
+		assertEquals("/v1/workspaces/10/members/100/profile-image", profileImageUrl.get());
+		verify(workspaceMemberRepository).findActiveProfileByWorkspaceIdAndMemberId(10L, 100L);
+	}
+
+	@Test
+	void findActiveProfileImageUrlByWorkspaceIdAndUserIdConvertsRepositoryProjection() {
+		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndUserId(10L, 1L))
+			.thenReturn(Optional.of(new WorkspaceMemberProfileProjection(100L, 1L, "User", 300L)));
+
+		Optional<String> profileImageUrl =
+			workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndUserId(10L, 1L);
+
+		assertTrue(profileImageUrl.isPresent());
+		assertEquals("/v1/workspaces/10/members/100/profile-image", profileImageUrl.get());
+		verify(workspaceMemberRepository).findActiveProfileByWorkspaceIdAndUserId(10L, 1L);
+	}
+
+	@Test
+	void findActiveProfileImageUrlReturnsEmptyWhenProfileImageDoesNotExist() {
+		when(workspaceMemberRepository.findActiveProfileByWorkspaceIdAndMemberId(10L, 100L))
+			.thenReturn(Optional.of(new WorkspaceMemberProfileProjection(100L, 1L, "User", null)));
+
+		Optional<String> profileImageUrl =
+			workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndMemberId(10L, 100L);
+
+		assertTrue(profileImageUrl.isEmpty());
 	}
 }

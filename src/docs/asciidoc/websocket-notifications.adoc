@@ -123,6 +123,10 @@ client.activate();
 |Number
 |알림 원인이 된 이벤트 발생 시각입니다. Unix epoch seconds 기준입니다.
 
+|``profile``
+|Object
+|알림 카드에서 대표로 표시할 프로필 이미지 정보입니다. ``profile.source``는 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다.
+
 |``scope``
 |Object
 |알림이 속한 범위입니다.
