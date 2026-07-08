@@ -80,10 +80,7 @@ public class NotificationRecipientSocketDeliveryService {
 	private boolean publishAndMark(Long userId, NotificationRecipient recipient) {
 		NotificationAlertResponse payload;
 		try {
-			payload = notificationAlertResponseAssembler.toResponse(
-				recipient.getNotificationAlert(),
-				recipient.getReadAt() != null
-			);
+			payload = notificationAlertResponseAssembler.toResponse(recipient);
 		}
 		catch (RuntimeException exception) {
 			log.warn(

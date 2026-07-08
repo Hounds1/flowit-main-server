@@ -104,6 +104,9 @@ include::_breadcrumb.adoc[]
 |``link.type``
 |link:notifications-enum-reference.html#notification-link-type[NotificationLinkType]
 
+|``profile.source``
+|link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]
+
 |``changes[].element``
 |link:workspaces-activity-records-enum-reference.html#activity-change-element[ActivityChangeElement]
 |===
@@ -275,6 +278,10 @@ include::_breadcrumb.adoc[]
   "id": 202,
   "type": "TASK_ASSIGNED",
   "occurredAt": 1782013200,
+  "profile": {
+    "source": "RECIPIENT",
+    "profileImageUrl": "/v1/users/me/profile-image"
+  },
   "scope": {
     "type": "WORKSPACE",
     "id": 12,
@@ -283,8 +290,7 @@ include::_breadcrumb.adoc[]
   "actor": {
     "type": "USER",
     "id": 34,
-    "name": "Actor",
-    "profileImageUrl": null
+    "name": "Actor"
   },
   "subject": {
     "type": "TASK",
@@ -317,6 +323,10 @@ include::_breadcrumb.adoc[]
   "id": 203,
   "type": "TASK_STATUS_CHANGED",
   "occurredAt": 1782013200,
+  "profile": {
+    "source": "ACTOR",
+    "profileImageUrl": "/v1/workspaces/12/members/34/profile-image"
+  },
   "scope": {
     "type": "WORKSPACE",
     "id": 12,
@@ -325,8 +335,7 @@ include::_breadcrumb.adoc[]
   "actor": {
     "type": "USER",
     "id": 34,
-    "name": "Actor",
-    "profileImageUrl": null
+    "name": "Actor"
   },
   "subject": {
     "type": "TASK",
@@ -353,6 +362,7 @@ include::_breadcrumb.adoc[]
 [cols="1,4",role="endpoint-summary"]
 |===
 |문장 조립 |``type``, ``actor``, ``subject``, ``scope``를 기준으로 클라이언트에서 문장을 조립합니다.
+|대표 프로필 |프로필 이미지는 ``profile``을 사용합니다. ``TASK_ASSIGNED``와 ``TASK_UNASSIGNED``는 ``RECIPIENT``, 그 외 작업 변경 알림은 ``ACTOR`` 기준으로 내려줍니다. 이미지가 ``null``이면 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 기본 아바타 문자 선택 기준으로 사용합니다.
 |날짜/진척도 변경 |``TASK_DATE_CHANGED``와 ``TASK_PROGRESS_CHANGED``는 예약 타입이지만 현재 알림 기록과 WebSocket payload를 생성하지 않습니다.
 |생성/할당 순서 |작업 생성과 동시에 담당자로 지정된 사용자는 ``TASK_CREATED``를 먼저 받고 ``TASK_ASSIGNED``를 이어 받을 수 있습니다.
 |담당자 변경 분기 |``TASK_ASSIGNED``는 새 담당자 관점, ``TASK_UNASSIGNED``는 직전 담당자 관점으로 표시합니다.

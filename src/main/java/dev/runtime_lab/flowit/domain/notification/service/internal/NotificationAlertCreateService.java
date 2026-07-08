@@ -68,7 +68,6 @@ public class NotificationAlertCreateService {
 			.actorType(command.actorType())
 			.actorId(command.actorId())
 			.actorNameSnapshot(command.actorName())
-			.actorProfileImageUrl(command.actorProfileImageUrl())
 			.subjectType(command.subjectType())
 			.subjectId(command.subjectId())
 			.subjectNameSnapshot(command.subjectName())

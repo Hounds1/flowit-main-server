@@ -8,6 +8,7 @@ import dev.runtime_lab.flowit.domain.activity.dto.ActivityTargetType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationActorType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectType;
 import dev.runtime_lab.flowit.domain.task.entity.TaskHistoryAction;
@@ -58,6 +59,8 @@ class EnumReferenceDocsTest {
 			Path.of("build/generated-snippets/enum-reference/notification-subject-type.adoc");
 		Path notificationLinkTypeSnippetPath =
 			Path.of("build/generated-snippets/enum-reference/notification-link-type.adoc");
+		Path notificationProfileSourceTypeSnippetPath =
+			Path.of("build/generated-snippets/enum-reference/notification-profile-source-type.adoc");
 
 		Files.createDirectories(userStatusSnippetPath.getParent());
 		Files.writeString(
@@ -245,6 +248,15 @@ class EnumReferenceDocsTest {
 			)),
 			StandardCharsets.UTF_8
 		);
+		Files.writeString(
+			notificationProfileSourceTypeSnippetPath,
+			enumTable(NotificationProfileSourceType.values(), Map.of(
+				NotificationProfileSourceType.ACTOR, "알림을 발생시킨 주체의 프로필 이미지를 대표 프로필로 사용합니다.",
+				NotificationProfileSourceType.SUBJECT, "알림 대상의 프로필 이미지를 대표 프로필로 사용합니다.",
+				NotificationProfileSourceType.RECIPIENT, "알림 수신자 본인의 프로필 이미지를 대표 프로필로 사용합니다."
+			)),
+			StandardCharsets.UTF_8
+		);
 
 		assertTrue(Files.exists(userStatusSnippetPath));
 		assertTrue(Files.exists(workspaceMemberRoleSnippetPath));
@@ -264,6 +276,7 @@ class EnumReferenceDocsTest {
 		assertTrue(Files.exists(notificationActorTypeSnippetPath));
 		assertTrue(Files.exists(notificationSubjectTypeSnippetPath));
 		assertTrue(Files.exists(notificationLinkTypeSnippetPath));
+		assertTrue(Files.exists(notificationProfileSourceTypeSnippetPath));
 	}
 
 	private <E extends Enum<E>> String enumTable(E[] values, Map<E, String> descriptions) {

@@ -11,6 +11,8 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationChangeResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileResponse;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectResponse;
@@ -113,6 +115,9 @@ class NotificationApiDocsTest {
 					fieldWithPath("data.items[].id").type(JsonFieldType.NUMBER).description("알림 식별자입니다."),
 					fieldWithPath("data.items[].type").type(JsonFieldType.STRING).description("알림 유형입니다. link:notifications-enum-reference.html#notification-alert-type[NotificationAlertType]을 참고합니다."),
 					fieldWithPath("data.items[].occurredAt").type(JsonFieldType.NUMBER).description("알림 원인이 된 이벤트 발생 시각입니다. Unix epoch seconds 기준입니다."),
+					fieldWithPath("data.items[].profile").type(JsonFieldType.OBJECT).description("알림 카드에서 대표로 표시할 프로필 이미지 정보입니다. 클라이언트는 프로필 이미지를 ``actor`` 또는 ``subject``에서 직접 추론하지 않고 이 값을 사용합니다."),
+					fieldWithPath("data.items[].profile.source").type(JsonFieldType.STRING).description("대표 프로필 이미지의 기준입니다. link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다. 이미지가 ``null``일 때 기본 아바타 문자 선택에도 사용할 수 있습니다."),
+					fieldWithPath("data.items[].profile.profileImageUrl").type(JsonFieldType.STRING).description("서버가 선택한 대표 프로필 이미지 URL입니다. 이미지가 없거나 안전한 조회 URL을 제공할 수 없으면 ``null``입니다.").optional(),
 					fieldWithPath("data.items[].scope").type(JsonFieldType.OBJECT).description("알림이 속한 범위입니다."),
 					fieldWithPath("data.items[].scope.type").type(JsonFieldType.STRING).description("알림 범위 유형입니다. link:notifications-enum-reference.html#notification-scope-type[NotificationScopeType]을 참고합니다."),
 					fieldWithPath("data.items[].scope.id").type(JsonFieldType.NUMBER).description("알림 범위 식별자입니다."),
@@ -121,7 +126,6 @@ class NotificationApiDocsTest {
 					fieldWithPath("data.items[].actor.type").type(JsonFieldType.STRING).description("알림 주체 유형입니다. link:notifications-enum-reference.html#notification-actor-type[NotificationActorType]을 참고합니다."),
 					fieldWithPath("data.items[].actor.id").type(JsonFieldType.NUMBER).description("알림 주체 식별자입니다. 주체가 없으면 ``null``입니다.").optional(),
 					fieldWithPath("data.items[].actor.name").type(JsonFieldType.STRING).description("알림 주체 표시 이름 스냅샷입니다. 주체가 없으면 ``null``입니다.").optional(),
-					fieldWithPath("data.items[].actor.profileImageUrl").type(JsonFieldType.STRING).description("알림 주체 프로필 이미지 URL입니다. 없으면 ``null``입니다.").optional(),
 					fieldWithPath("data.items[].subject").type(JsonFieldType.OBJECT).description("알림의 대상입니다."),
 					fieldWithPath("data.items[].subject.type").type(JsonFieldType.STRING).description("알림 대상 유형입니다. link:notifications-enum-reference.html#notification-subject-type[NotificationSubjectType]을 참고합니다."),
 					fieldWithPath("data.items[].subject.id").type(JsonFieldType.NUMBER).description("알림 대상 식별자입니다."),
@@ -209,12 +213,16 @@ class NotificationApiDocsTest {
 	private NotificationAlertResponse alert(boolean read) {
 		return new NotificationAlertResponse(
 			1L,
-			NotificationAlertType.WORKSPACE_MEMBER_REMOVED,
+			NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED,
 			1782013200L,
+			new NotificationProfileResponse(
+				NotificationProfileSourceType.SUBJECT,
+				"/v1/workspaces/12/members/55/profile-image"
+			),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),
-			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor", "/v1/users/34/profile-image"),
+			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor"),
 			new NotificationSubjectResponse(NotificationSubjectType.WORKSPACE_MEMBER, 55L, "Target"),
-			List.of(new NotificationChangeResponse("MEMBERSHIP", "ACTIVE", "REMOVED")),
+			List.of(new NotificationChangeResponse("ROLE", "MEMBER", "ADMIN")),
 			new NotificationLinkResponse(NotificationLinkType.WORKSPACE_MEMBERS, 12L),
 			read
 		);

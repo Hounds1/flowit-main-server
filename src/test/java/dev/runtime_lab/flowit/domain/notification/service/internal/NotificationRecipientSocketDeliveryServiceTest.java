@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -54,10 +53,8 @@ class NotificationRecipientSocketDeliveryServiceTest {
 
 		when(notificationRecipientRepository.findPendingSocketDeliveryByUserId(34L, 100))
 			.thenReturn(List.of(first, second), List.of());
-		when(notificationAlertResponseAssembler.toResponse(first.getNotificationAlert(), false))
-			.thenReturn(firstResponse);
-		when(notificationAlertResponseAssembler.toResponse(second.getNotificationAlert(), true))
-			.thenReturn(secondResponse);
+		when(notificationAlertResponseAssembler.toResponse(first)).thenReturn(firstResponse);
+		when(notificationAlertResponseAssembler.toResponse(second)).thenReturn(secondResponse);
 
 		boolean completed = service.deliver(34L);
 
@@ -79,10 +76,8 @@ class NotificationRecipientSocketDeliveryServiceTest {
 
 		when(notificationRecipientRepository.findPendingSocketDeliveryByUserId(34L, 100))
 			.thenReturn(List.of(first, second));
-		when(notificationAlertResponseAssembler.toResponse(first.getNotificationAlert(), false))
-			.thenReturn(firstResponse);
-		when(notificationAlertResponseAssembler.toResponse(second.getNotificationAlert(), false))
-			.thenReturn(secondResponse);
+		when(notificationAlertResponseAssembler.toResponse(first)).thenReturn(firstResponse);
+		when(notificationAlertResponseAssembler.toResponse(second)).thenReturn(secondResponse);
 		doThrow(new IllegalStateException("broker down"))
 			.when(webSocketPublisher)
 			.publishUserNotification(34L, firstResponse);
@@ -104,14 +99,13 @@ class NotificationRecipientSocketDeliveryServiceTest {
 
 		when(notificationRecipientRepository.findPendingSocketDeliveryByUserId(34L, 100))
 			.thenReturn(List.of(first, second));
-		when(notificationAlertResponseAssembler.toResponse(first.getNotificationAlert(), false))
-			.thenThrow(new IllegalStateException("invalid changes"));
+		when(notificationAlertResponseAssembler.toResponse(first)).thenThrow(new IllegalStateException("invalid changes"));
 
 		boolean completed = service.deliver(34L);
 
 		assertFalse(completed);
 		verifyNoInteractions(webSocketPublisher);
-		verify(notificationAlertResponseAssembler, never()).toResponse(second.getNotificationAlert(), false);
+		verify(notificationAlertResponseAssembler, never()).toResponse(second);
 		verify(notificationRecipientRepository, never()).markSocketSentIfPending(anyLong(), anyLong());
 		verify(notificationRecipientDeliveryRetryQueue).schedule(34L);
 	}
@@ -138,8 +132,7 @@ class NotificationRecipientSocketDeliveryServiceTest {
 
 		when(notificationRecipientRepository.findPendingSocketDeliveryByUserId(34L, 100))
 			.thenAnswer(invocation -> queryCount.getAndIncrement() < 10 ? recipients : List.of());
-		when(notificationAlertResponseAssembler.toResponse(any(NotificationAlert.class), eq(false)))
-			.thenReturn(response);
+		when(notificationAlertResponseAssembler.toResponse(any(NotificationRecipient.class))).thenReturn(response);
 
 		boolean completed = service.deliver(34L);
 

@@ -167,8 +167,12 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 ----
 {
   "id": 101,
-  "type": "WORKSPACE_MEMBER_REMOVED",
+  "type": "WORKSPACE_MEMBER_ROLE_CHANGED",
   "occurredAt": 1782013200,
+  "profile": {
+    "source": "SUBJECT",
+    "profileImageUrl": "/v1/workspaces/12/members/55/profile-image"
+  },
   "scope": {
     "type": "WORKSPACE",
     "id": 12,
@@ -177,8 +181,7 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
   "actor": {
     "type": "USER",
     "id": 34,
-    "name": "Actor",
-    "profileImageUrl": "/v1/users/34/profile-image"
+    "name": "Actor"
   },
   "subject": {
     "type": "WORKSPACE_MEMBER",
@@ -187,14 +190,9 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
   },
   "changes": [
     {
-      "element": "MEMBERSHIP",
-      "from": "ACTIVE",
-      "to": "REMOVED"
-    },
-    {
       "element": "ROLE",
       "from": "MEMBER",
-      "to": null
+      "to": "ADMIN"
     }
   ],
   "link": {
@@ -212,13 +210,13 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |용도 |예시
 
 |목록 요약
-|``actor.name`` + "님이 " + ``subject.name`` + "님을 " + ``scope.name`` + " 워크스페이스에서 내보냈습니다."
+|``actor.name`` + "님이 " + ``subject.name`` + "님의 역할을 변경했습니다."
 
 |목록 출력 예
-|Actor님이 Target님을 Flowit 워크스페이스에서 내보냈습니다.
+|Actor님이 Target님의 역할을 변경했습니다.
 
 |상세 diff
-|멤버십: ``ACTIVE`` -> ``REMOVED`` / 역할: ``MEMBER`` -> 없음
+|역할: ``MEMBER`` -> ``ADMIN``
 
 |링크 힌트
 |``link.type``이 ``WORKSPACE_MEMBERS``이면 클라이언트가 필요에 따라 멤버 관리 화면 이동을 구성할 수 있도록 ``link.workspaceId``를 함께 제공합니다.
@@ -236,6 +234,9 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |``scope``
 |알림이 발생한 범위입니다. 현재는 ``WORKSPACE`` 범위이며, ``scope.name``을 문장에 넣어 어느 워크스페이스의 알림인지 보여줄 수 있습니다.
 
+|``profile``
+|알림 카드에서 대표로 표시할 프로필 이미지 정보입니다. 서버가 알림 유형과 수신자 관점에 따라 결정하므로, 클라이언트는 ``actor`` 또는 ``subject``에서 이미지를 직접 추론하지 않고 이 값을 사용합니다. ``profile.source``는 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType] 값이며, 이미지가 ``null``일 때 어떤 이름의 첫 글자를 기본 아바타로 사용할지 판단하는 기준입니다.
+
 |``actor``
 |알림을 발생시킨 주체입니다. 주체가 없는 이벤트를 대비해 ``actor.id``와 ``actor.name``은 ``null`` 가능성을 고려합니다.
 
@@ -251,6 +252,24 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |``read``
 |현재 사용자 기준 읽음 상태입니다. 알림 자체의 전역 상태가 아니라 수신자별 상태입니다.
 |===
+
+=== Notification profile 선택 기준
+
+[cols="1,2",options="header",role="api-table"]
+|===
+|``profile.source`` |알림 유형
+
+|``ACTOR``
+|``TASK_CREATED``, ``TASK_DATE_CHANGED``, ``TASK_STATUS_CHANGED``, ``TASK_PROGRESS_CHANGED``
+
+|``RECIPIENT``
+|``TASK_ASSIGNED``, ``TASK_UNASSIGNED``, ``WORKSPACE_ACCESS_REVOKED``
+
+|``SUBJECT``
+|``WORKSPACE_MEMBER_JOINED``, ``WORKSPACE_MEMBER_ROLE_CHANGED``, ``WORKSPACE_MEMBER_REMOVED``, ``WORKSPACE_MEMBER_WITHDRAWN``
+|===
+
+``WORKSPACE_MEMBER_REMOVED``와 ``WORKSPACE_MEMBER_WITHDRAWN``의 ``subject``는 이미 비활성 멤버일 수 있습니다. 이 경우 서버는 안전한 워크스페이스 멤버 프로필 이미지 URL을 제공하지 않고 ``profile.profileImageUrl``을 ``null``로 내려줄 수 있습니다.
 
 === Notification 유형별 예시
 
@@ -317,6 +336,9 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 
 |``actor``의 식별자 또는 이름이 ``null``
 |문장 주어를 "시스템" 또는 화면 정책에 맞는 대체 표현으로 처리합니다. 단, 현재 사용자 이름으로 임의 치환하지 않습니다.
+
+|``profile.profileImageUrl``이 ``null``
+|이미지가 없거나 서버가 안전한 이미지 조회 URL을 제공할 수 없는 상태입니다. 클라이언트는 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 기준으로 ``actor.name``, ``subject.name`` 또는 현재 사용자 이름의 첫 글자를 기본 아바타로 표시합니다.
 
 |``changes[].from``이 ``null``
 |생성, 가입처럼 이전 값이 없는 변경으로 해석할 수 있습니다. 상세 표시에서는 "없음 -> 새 값" 또는 "새 값으로 설정" 형태를 사용할 수 있습니다.

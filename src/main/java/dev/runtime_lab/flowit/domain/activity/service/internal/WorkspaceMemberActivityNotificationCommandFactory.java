@@ -53,7 +53,6 @@ public class WorkspaceMemberActivityNotificationCommandFactory implements Worksp
 			record.getActorUser() == null ? null : NotificationActorType.USER,
 			record.getActorUser() == null ? null : record.getActorUser().getId(),
 			record.getActorDisplayNameSnapshot(),
-			null,
 			NotificationSubjectType.WORKSPACE_MEMBER,
 			record.getTargetId(),
 			record.getTargetDisplayNameSnapshot(),

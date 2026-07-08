@@ -192,7 +192,6 @@ public class TaskActivityNotificationCommandFactory implements WorkspaceActivity
 			record.getActorUser() == null ? null : NotificationActorType.USER,
 			record.getActorUser() == null ? null : record.getActorUser().getId(),
 			record.getActorDisplayNameSnapshot(),
-			null,
 			NotificationSubjectType.TASK,
 			record.getTargetId(),
 			record.getTargetDisplayNameSnapshot(),

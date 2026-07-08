@@ -15,6 +15,7 @@ import dev.runtime_lab.flowit.domain.workspace.entity.QWorkspaceMemberRoleHistor
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMember;
 import dev.runtime_lab.flowit.domain.workspace.entity.WorkspaceMemberRole;
+import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMemberProfileProjection;
 import dev.runtime_lab.flowit.domain.workspace.repository.projection.WorkspaceMembershipProjection;
 import dev.runtime_lab.flowit.global.jpa.repository.CustomJpaRepo;
 import jakarta.persistence.EntityManager;
@@ -103,6 +104,64 @@ public class WorkspaceMemberRepository extends CustomJpaRepo<WorkspaceMember, Lo
 					workspaceMember.workspace.id.eq(workspaceId),
 					workspaceMember.user.id.eq(userId),
 					workspaceMember.deletedAt.isNull()
+				)
+				.fetchOne()
+		);
+	}
+
+	public Optional<WorkspaceMemberProfileProjection> findActiveProfileByWorkspaceIdAndMemberId(
+		Long workspaceId,
+		Long memberId
+	) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QUser user = QUser.user;
+		QFileMetadata profileImageFile = QFileMetadata.fileMetadata;
+
+		return Optional.ofNullable(
+			queryFactory.select(Projections.constructor(
+					WorkspaceMemberProfileProjection.class,
+					workspaceMember.id,
+					user.id,
+					user.name,
+					profileImageFile.id
+				))
+				.from(workspaceMember)
+				.join(workspaceMember.user, user)
+				.leftJoin(user.profileImageFile, profileImageFile)
+				.where(
+					workspaceMember.workspace.id.eq(workspaceId),
+					workspaceMember.id.eq(memberId),
+					workspaceMember.deletedAt.isNull(),
+					user.deletedAt.isNull()
+				)
+				.fetchOne()
+		);
+	}
+
+	public Optional<WorkspaceMemberProfileProjection> findActiveProfileByWorkspaceIdAndUserId(
+		Long workspaceId,
+		Long userId
+	) {
+		QWorkspaceMember workspaceMember = QWorkspaceMember.workspaceMember;
+		QUser user = QUser.user;
+		QFileMetadata profileImageFile = QFileMetadata.fileMetadata;
+
+		return Optional.ofNullable(
+			queryFactory.select(Projections.constructor(
+					WorkspaceMemberProfileProjection.class,
+					workspaceMember.id,
+					user.id,
+					user.name,
+					profileImageFile.id
+				))
+				.from(workspaceMember)
+				.join(workspaceMember.user, user)
+				.leftJoin(user.profileImageFile, profileImageFile)
+				.where(
+					workspaceMember.workspace.id.eq(workspaceId),
+					user.id.eq(userId),
+					workspaceMember.deletedAt.isNull(),
+					user.deletedAt.isNull()
 				)
 				.fetchOne()
 		);

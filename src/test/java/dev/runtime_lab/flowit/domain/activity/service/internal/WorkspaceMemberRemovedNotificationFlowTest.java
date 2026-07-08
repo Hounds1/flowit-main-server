@@ -7,6 +7,8 @@ import dev.runtime_lab.flowit.domain.activity.entity.ActivityRecordSourceType;
 import dev.runtime_lab.flowit.domain.activity.entity.WorkspaceActivityRecord;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileResponse;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceType;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationAlert;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationRecipient;
 import dev.runtime_lab.flowit.domain.notification.event.NotificationRecipientDeliveryRequestedEvent;
@@ -15,6 +17,7 @@ import dev.runtime_lab.flowit.domain.notification.repository.NotificationAlertRe
 import dev.runtime_lab.flowit.domain.notification.repository.NotificationRecipientRepository;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertCreateService;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationAlertResponseAssembler;
+import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationProfileResolver;
 import dev.runtime_lab.flowit.domain.notification.service.internal.NotificationRecipientSocketDeliveryService;
 import dev.runtime_lab.flowit.domain.user.entity.User;
 import dev.runtime_lab.flowit.domain.workspace.entity.Workspace;
@@ -42,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -62,9 +66,10 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 	private final WebSocketPublisher webSocketPublisher = mock(WebSocketPublisher.class);
 	private final NotificationRecipientDeliveryRetryQueue notificationRecipientDeliveryRetryQueue =
 		mock(NotificationRecipientDeliveryRetryQueue.class);
+	private final NotificationProfileResolver notificationProfileResolver = mock(NotificationProfileResolver.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1782013300L), ZoneOffset.UTC);
 	private final NotificationAlertResponseAssembler responseAssembler =
-		new NotificationAlertResponseAssembler(JsonMapper.builder().build());
+		new NotificationAlertResponseAssembler(JsonMapper.builder().build(), notificationProfileResolver);
 	private final NotificationAlertCreateService createService = new NotificationAlertCreateService(
 		notificationAlertRepository,
 		notificationRecipientRepository,
@@ -136,6 +141,12 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 			});
 		when(workspaceMembershipQueryService.findActiveMemberUserIds(12L)).thenReturn(List.of(34L, 35L));
 		when(workspaceMembershipQueryService.findMemberUserId(12L, 55L)).thenReturn(Optional.of(36L));
+		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(34L)))
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null));
+		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(35L)))
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null));
+		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(36L)))
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null));
 		doAnswer(invocation -> {
 			Object event = invocation.getArgument(0);
 			if (event instanceof NotificationRecipientDeliveryRequestedEvent deliveryEvent) {

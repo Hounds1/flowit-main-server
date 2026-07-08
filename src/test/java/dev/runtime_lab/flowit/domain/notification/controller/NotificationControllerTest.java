@@ -9,6 +9,8 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertSeenRespo
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationAlertType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationLinkType;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileResponse;
+import dev.runtime_lab.flowit.domain.notification.dto.NotificationProfileSourceType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeResponse;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectResponse;
@@ -81,6 +83,8 @@ class NotificationControllerTest {
 			.andExpect(jsonPath("$.data.items[0].type").value("WORKSPACE_MEMBER_JOINED"))
 			.andExpect(jsonPath("$.data.items[0].scope.type").value("WORKSPACE"))
 			.andExpect(jsonPath("$.data.items[0].scope.id").value(12L))
+			.andExpect(jsonPath("$.data.items[0].profile.source").value("SUBJECT"))
+			.andExpect(jsonPath("$.data.items[0].profile.profileImageUrl").value("/v1/workspaces/12/members/55/profile-image"))
 			.andExpect(jsonPath("$.data.items[0].actor.name").value("Actor"))
 			.andExpect(jsonPath("$.data.items[0].subject.name").value("Target"))
 			.andExpect(jsonPath("$.data.items[0].link.type").value("WORKSPACE_MEMBERS"))
@@ -153,8 +157,12 @@ class NotificationControllerTest {
 			1L,
 			NotificationAlertType.WORKSPACE_MEMBER_JOINED,
 			1782013200L,
+			new NotificationProfileResponse(
+				NotificationProfileSourceType.SUBJECT,
+				"/v1/workspaces/12/members/55/profile-image"
+			),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),
-			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor", null),
+			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor"),
 			new NotificationSubjectResponse(NotificationSubjectType.WORKSPACE_MEMBER, 55L, "Target"),
 			List.of(),
 			new NotificationLinkResponse(NotificationLinkType.WORKSPACE_MEMBERS, 12L),

@@ -7,6 +7,7 @@ public record NotificationAlertResponse(
 	Long id,
 	NotificationAlertType type,
 	Long occurredAt,
+	NotificationProfileResponse profile,
 	NotificationScopeResponse scope,
 	NotificationActorResponse actor,
 	NotificationSubjectResponse subject,
