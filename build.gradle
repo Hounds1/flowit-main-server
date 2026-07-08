@@ -14,7 +14,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.38-volt'
+version = '0.2.39-volt'
 
 java {
 	toolchain {
@@ -965,6 +965,17 @@ tasks.named('test') {
 	}
 }
 
+tasks.register('architectureTest', Test) {
+	group = 'verification'
+	description = 'Runs ArchUnit architecture rules.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	filter {
+		includeTestsMatching 'dev.runtime_lab.flowit.architecture.ArchitectureTest'
+	}
+}
+
 tasks.register('webSocketConnectionTest', Test) {
 	group = 'verification'
 	description = 'Runs the WebSocket connection flow test with console-visible STOMP flow logs.'
@@ -1125,6 +1136,7 @@ tasks.register('restdocsTest', Test) {
 	filter {
 		includeTestsMatching 'dev.runtime_lab.flowit.docs.*'
 	}
+	mustRunAfter 'architectureTest'
 }
 
 afterEvaluate {
@@ -1273,6 +1285,7 @@ ${latestContent}
 tasks.named('asciidoctor', AsciidoctorTask) {
 	inputs.dir snippetsDir
 	dependsOn restdocsTest
+	mustRunAfter 'architectureTest'
 	baseDirFollowsSourceFile()
 	onlyIf {
 		if (!shouldPublishApiDocs()) {
@@ -1307,6 +1320,7 @@ tasks.named('asciidoctor', AsciidoctorTask) {
 tasks.register('copyApiDocs', Copy) {
 	description = 'Copies generated API documentation into Spring Boot static resources.'
 	group = 'documentation'
+	dependsOn 'architectureTest'
 	dependsOn asciidoctor
 	dependsOn 'openapi3'
 	from layout.buildDirectory.dir('docs/asciidoc')
