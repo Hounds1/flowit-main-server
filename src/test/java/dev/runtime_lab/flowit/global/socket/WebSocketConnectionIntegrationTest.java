@@ -104,8 +104,12 @@ class WebSocketConnectionIntegrationTest {
 
 			assertEquals(100L, removedMemberReceived.id());
 			assertEquals(NotificationAlertType.WORKSPACE_ACCESS_REVOKED, removedMemberReceived.type());
+			assertEquals(NotificationProfileSourceType.RECIPIENT, removedMemberReceived.profile().source());
+			assertEquals("Target", removedMemberReceived.profile().displayName());
 			assertEquals(101L, workspaceMemberReceived.id());
 			assertEquals(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, workspaceMemberReceived.type());
+			assertEquals(NotificationProfileSourceType.ACTOR, workspaceMemberReceived.profile().source());
+			assertEquals("Actor", workspaceMemberReceived.profile().displayName());
 		}
 		finally {
 			disconnect(removedMemberClient);
@@ -244,7 +248,7 @@ class WebSocketConnectionIntegrationTest {
 			id,
 			type,
 			1782013200L,
-			new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null),
+			profile(type),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),
 			new NotificationActorResponse(NotificationActorType.USER, 34L, "Actor"),
 			new NotificationSubjectResponse(NotificationSubjectType.WORKSPACE_MEMBER, 55L, "Target"),
@@ -252,6 +256,16 @@ class WebSocketConnectionIntegrationTest {
 			new NotificationLinkResponse(linkType, linkWorkspaceId),
 			false
 		);
+	}
+
+	private NotificationProfileResponse profile(NotificationAlertType type) {
+		return switch (type) {
+			case WORKSPACE_ACCESS_REVOKED ->
+				new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, "Target", "/v1/users/me/profile-image");
+			case WORKSPACE_MEMBER_REMOVED ->
+				new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, "Actor", "/v1/workspaces/12/members/34/profile-image");
+			default -> new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, "Target", null);
+		};
 	}
 
 	private String bearerToken(Long userId) {

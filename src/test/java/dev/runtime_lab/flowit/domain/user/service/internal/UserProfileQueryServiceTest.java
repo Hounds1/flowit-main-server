@@ -2,6 +2,7 @@ package dev.runtime_lab.flowit.domain.user.service.internal;
 
 import dev.runtime_lab.flowit.domain.user.repository.UserRepository;
 import dev.runtime_lab.flowit.domain.user.repository.projection.UserProfileProjection;
+import dev.runtime_lab.flowit.domain.user.service.internal.contract.UserProfileSummary;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,19 @@ class UserProfileQueryServiceTest {
 
 	private final UserRepository userRepository = mock(UserRepository.class);
 	private final UserProfileQueryService userProfileQueryService = new UserProfileQueryService(userRepository);
+
+	@Test
+	void findCurrentUserProfileReturnsDisplayNameAndProfileImageUrl() {
+		when(userRepository.findActiveProfileById(1L))
+			.thenReturn(Optional.of(new UserProfileProjection(1L, "User", 300L)));
+
+		Optional<UserProfileSummary> profile = userProfileQueryService.findCurrentUserProfile(1L);
+
+		assertTrue(profile.isPresent());
+		assertEquals("User", profile.get().displayName());
+		assertEquals("/v1/users/me/profile-image", profile.get().profileImageUrl());
+		verify(userRepository).findActiveProfileById(1L);
+	}
 
 	@Test
 	void findCurrentUserProfileImageUrlReturnsCurrentUserProfileImageUrl() {

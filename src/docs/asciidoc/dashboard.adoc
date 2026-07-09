@@ -40,7 +40,7 @@ include::_breadcrumb.adoc[]
 |link:workspaces-tasks-indicators.html[작업 인디케이터 조회 API]
 |``GET``
 |``/v1/workspaces/{workspaceId}/tasks/indicators``
-|전체 업무, 진행 중, 오늘 마감, 리뷰 대기 인디케이터 카드에 사용합니다.
+|전체 업무, 진행 중, 오늘 마감, 만료 인디케이터 카드에 사용합니다.
 
 |2
 |link:workspaces-activity-records.html[워크스페이스 최근 활동 API]
@@ -65,7 +65,7 @@ include::_breadcrumb.adoc[]
 |영역 |권장 사용 방식
 
 |인디케이터
-|작업 인디케이터 조회 API를 사용합니다. 리뷰 대기는 리뷰 기능이 구현되기 전까지 항상 ``0``입니다.
+|작업 인디케이터 조회 API를 사용합니다. 만료는 마감 예정 시각이 지났고 완료되지 않은 업무 수입니다.
 
 |최근 활동
 |워크스페이스 최근 활동 API를 사용합니다. 서버가 완성 문장을 내려주지 않으므로 ``actor``, ``target``, ``action``, ``changes``를 화면 정책에 맞게 조립합니다.

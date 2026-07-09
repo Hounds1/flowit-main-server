@@ -283,7 +283,7 @@ class TaskServiceTest {
 	}
 
 	@Test
-	void indicatorsReturnsCountsForUtcToday() {
+	void indicatorsReturnsCountsForUtcTodayAndExpired() {
 		CurrentUser currentUser = new CurrentUser(1L, "actor@example.com", "Actor");
 		User actor = user(1L, "actor@example.com", "Actor");
 		Workspace workspace = workspace(actor);
@@ -291,17 +291,17 @@ class TaskServiceTest {
 
 		when(workspaceAccessService.resolveMemberAccess(currentUser, 1L))
 			.thenReturn(new WorkspaceAccessContext(actor, workspace, actorMember));
-		when(taskRepository.countIndicators(1L, 1780876800L, 1780963200L))
-			.thenReturn(new TaskIndicatorCounts(12L, 3L, 2L));
+		when(taskRepository.countIndicators(1L, 1780876800L, 1780963200L, 1780916400L))
+			.thenReturn(new TaskIndicatorCounts(12L, 3L, 2L, 4L));
 
 		var response = taskService.indicators(currentUser, 1L);
 
 		assertEquals(12L, response.total());
 		assertEquals(3L, response.inProgress());
 		assertEquals(2L, response.dueToday());
-		assertEquals(0L, response.pendingReview());
+		assertEquals(4L, response.expired());
 		verify(workspaceAccessService).resolveMemberAccess(currentUser, 1L);
-		verify(taskRepository).countIndicators(1L, 1780876800L, 1780963200L);
+		verify(taskRepository).countIndicators(1L, 1780876800L, 1780963200L, 1780916400L);
 	}
 
 	@Test

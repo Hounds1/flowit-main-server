@@ -180,7 +180,7 @@ class TaskControllerTest {
 	@Test
 	void indicatorsReturnsTaskIndicators() throws Exception {
 		when(taskService.indicators(any(CurrentUser.class), eq(1L)))
-			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 0L));
+			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 4L));
 		SecurityContextHolder.getContext().setAuthentication(
 			new JwtAuthenticationToken(jwt("7", "user@example.com", "김철수"), List.of())
 		);
@@ -192,7 +192,7 @@ class TaskControllerTest {
 			.andExpect(jsonPath("$.data.total").value(12L))
 			.andExpect(jsonPath("$.data.inProgress").value(3L))
 			.andExpect(jsonPath("$.data.dueToday").value(2L))
-			.andExpect(jsonPath("$.data.pendingReview").value(0L));
+			.andExpect(jsonPath("$.data.expired").value(4L));
 
 		verify(taskService).indicators(any(CurrentUser.class), eq(1L));
 	}

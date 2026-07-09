@@ -107,7 +107,12 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 		return count == null ? 0L : count;
 	}
 
-	public TaskIndicatorCounts countIndicators(Long workspaceId, Long todayStart, Long tomorrowStart) {
+	public TaskIndicatorCounts countIndicators(
+		Long workspaceId,
+		Long todayStart,
+		Long tomorrowStart,
+		Long nowEpochSecond
+	) {
 		QTask task = QTask.task;
 		NumberExpression<Long> totalCount = task.id.count();
 		NumberExpression<Long> inProgressCount = new CaseBuilder()
@@ -124,8 +129,17 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 			.then(1L)
 			.otherwise(0L)
 			.sum();
+		NumberExpression<Long> expiredCount = new CaseBuilder()
+			.when(
+				task.status.ne(TaskStatus.DONE)
+					.and(task.dueDate.isNotNull())
+					.and(task.dueDate.lt(nowEpochSecond))
+			)
+			.then(1L)
+			.otherwise(0L)
+			.sum();
 
-		Tuple counts = queryFactory.select(totalCount, inProgressCount, dueTodayCount)
+		Tuple counts = queryFactory.select(totalCount, inProgressCount, dueTodayCount, expiredCount)
 			.from(task)
 			.where(
 				task.workspace.id.eq(workspaceId),
@@ -140,7 +154,8 @@ public class TaskRepository extends CustomJpaRepo<Task, Long> {
 		return new TaskIndicatorCounts(
 			countValue(counts.get(totalCount)),
 			countValue(counts.get(inProgressCount)),
-			countValue(counts.get(dueTodayCount))
+			countValue(counts.get(dueTodayCount)),
+			countValue(counts.get(expiredCount))
 		);
 	}
 
