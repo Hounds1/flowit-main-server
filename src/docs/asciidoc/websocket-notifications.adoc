@@ -125,7 +125,7 @@ client.activate();
 
 |``profile``
 |Object
-|알림 카드에서 대표로 표시할 프로필 이미지 정보입니다. ``profile.source``는 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다.
+|알림 카드에서 대표로 표시할 프로필 정보입니다. ``profile.source``는 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다. ``profile.displayName``은 대표 표시 이름입니다.
 
 |``scope``
 |Object

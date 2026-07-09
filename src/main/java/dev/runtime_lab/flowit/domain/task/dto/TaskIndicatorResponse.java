@@ -4,6 +4,6 @@ public record TaskIndicatorResponse(
 	long total,
 	long inProgress,
 	long dueToday,
-	long pendingReview
+	long expired
 ) {
 }

@@ -203,13 +203,14 @@ public class TaskService {
 		LocalDate today = LocalDate.now(clock);
 		long todayStart = today.atStartOfDay(clock.getZone()).toEpochSecond();
 		long tomorrowStart = today.plusDays(1).atStartOfDay(clock.getZone()).toEpochSecond();
-		TaskIndicatorCounts counts = taskRepository.countIndicators(workspaceId, todayStart, tomorrowStart);
+		long now = now();
+		TaskIndicatorCounts counts = taskRepository.countIndicators(workspaceId, todayStart, tomorrowStart, now);
 
 		return new TaskIndicatorResponse(
 			counts.total(),
 			counts.inProgress(),
 			counts.dueToday(),
-			0L
+			counts.expired()
 		);
 	}
 

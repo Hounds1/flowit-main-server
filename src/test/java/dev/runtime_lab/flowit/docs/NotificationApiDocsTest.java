@@ -115,8 +115,9 @@ class NotificationApiDocsTest {
 					fieldWithPath("data.items[].id").type(JsonFieldType.NUMBER).description("알림 식별자입니다."),
 					fieldWithPath("data.items[].type").type(JsonFieldType.STRING).description("알림 유형입니다. link:notifications-enum-reference.html#notification-alert-type[NotificationAlertType]을 참고합니다."),
 					fieldWithPath("data.items[].occurredAt").type(JsonFieldType.NUMBER).description("알림 원인이 된 이벤트 발생 시각입니다. Unix epoch seconds 기준입니다."),
-					fieldWithPath("data.items[].profile").type(JsonFieldType.OBJECT).description("알림 카드에서 대표로 표시할 프로필 이미지 정보입니다. 클라이언트는 프로필 이미지를 ``actor`` 또는 ``subject``에서 직접 추론하지 않고 이 값을 사용합니다."),
-					fieldWithPath("data.items[].profile.source").type(JsonFieldType.STRING).description("대표 프로필 이미지의 기준입니다. link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다. 이미지가 ``null``일 때 기본 아바타 문자 선택에도 사용할 수 있습니다."),
+					fieldWithPath("data.items[].profile").type(JsonFieldType.OBJECT).description("알림 카드에서 대표로 표시할 프로필 정보입니다. 클라이언트는 대표 프로필을 ``actor`` 또는 ``subject``에서 직접 추론하지 않고 이 값을 사용합니다."),
+					fieldWithPath("data.items[].profile.source").type(JsonFieldType.STRING).description("대표 프로필의 기준입니다. link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 참고합니다."),
+					fieldWithPath("data.items[].profile.displayName").type(JsonFieldType.STRING).description("대표 프로필 표시 이름입니다. ``profile.source``에 따라 주체, 대상 또는 수신자 이름을 제공합니다. 이름을 제공할 수 없으면 ``null``입니다.").optional(),
 					fieldWithPath("data.items[].profile.profileImageUrl").type(JsonFieldType.STRING).description("서버가 선택한 대표 프로필 이미지 URL입니다. 이미지가 없거나 안전한 조회 URL을 제공할 수 없으면 ``null``입니다.").optional(),
 					fieldWithPath("data.items[].scope").type(JsonFieldType.OBJECT).description("알림이 속한 범위입니다."),
 					fieldWithPath("data.items[].scope.type").type(JsonFieldType.STRING).description("알림 범위 유형입니다. link:notifications-enum-reference.html#notification-scope-type[NotificationScopeType]을 참고합니다."),
@@ -217,6 +218,7 @@ class NotificationApiDocsTest {
 			1782013200L,
 			new NotificationProfileResponse(
 				NotificationProfileSourceType.SUBJECT,
+				"Target",
 				"/v1/workspaces/12/members/55/profile-image"
 			),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),

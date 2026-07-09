@@ -196,7 +196,7 @@ class TaskApiDocsTest {
 	@Test
 	void taskIndicators() throws Exception {
 		when(taskService.indicators(any(CurrentUser.class), eq(2001L)))
-			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 0L));
+			.thenReturn(new TaskIndicatorResponse(12L, 3L, 2L, 4L));
 		authenticate();
 
 		mockMvc.perform(get("/v1/workspaces/{workspaceId}/tasks/indicators", 2001L)
@@ -491,7 +491,7 @@ class TaskApiDocsTest {
 			fieldWithPath("data.total").type(JsonFieldType.NUMBER).description("삭제되지 않은 전체 업무 수입니다."),
 			fieldWithPath("data.inProgress").type(JsonFieldType.NUMBER).description("삭제되지 않은 진행 중 업무 수입니다."),
 			fieldWithPath("data.dueToday").type(JsonFieldType.NUMBER).description("오늘 마감인 미완료 업무 수입니다. 서버 Clock의 일자 경계를 기준으로 계산합니다."),
-			fieldWithPath("data.pendingReview").type(JsonFieldType.NUMBER).description("리뷰 대기 업무 수입니다. 리뷰 기능이 구현되기 전까지 항상 ``0``입니다."),
+			fieldWithPath("data.expired").type(JsonFieldType.NUMBER).description("마감 예정 시각이 지났고 완료되지 않은 업무 수입니다."),
 			fieldWithPath("extensions").type(JsonFieldType.OBJECT).description("응답 보조 정보입니다.")
 		};
 	}

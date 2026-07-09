@@ -24,8 +24,8 @@ public class NotificationProfileResolver {
 				recipientProfile(recipientUserId);
 			case WORKSPACE_MEMBER_JOINED,
 				WORKSPACE_MEMBER_ROLE_CHANGED,
-				WORKSPACE_MEMBER_REMOVED,
 				WORKSPACE_MEMBER_WITHDRAWN -> subjectWorkspaceMemberProfile(notificationAlert);
+			case WORKSPACE_MEMBER_REMOVED -> actorWorkspaceMemberProfile(notificationAlert);
 			case TASK_CREATED,
 				TASK_DATE_CHANGED,
 				TASK_STATUS_CHANGED,
@@ -35,22 +35,24 @@ public class NotificationProfileResolver {
 
 	private NotificationProfileResponse recipientProfile(Long recipientUserId) {
 		if (recipientUserId == null) {
-			return new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null);
+			return new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null, null);
 		}
 
-		return userProfileQueryService.findCurrentUserProfileImageUrl(recipientUserId)
-			.map(profileImageUrl -> new NotificationProfileResponse(
+		return userProfileQueryService.findCurrentUserProfile(recipientUserId)
+			.map(profile -> new NotificationProfileResponse(
 				NotificationProfileSourceType.RECIPIENT,
-				profileImageUrl
+				profile.displayName(),
+				profile.profileImageUrl()
 			))
-			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null));
+			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null, null));
 	}
 
 	private NotificationProfileResponse subjectWorkspaceMemberProfile(NotificationAlert notificationAlert) {
+		String displayName = notificationAlert.getSubjectNameSnapshot();
 		if (notificationAlert.getScopeType() != NotificationScopeType.WORKSPACE
 			|| notificationAlert.getSubjectType() != NotificationSubjectType.WORKSPACE_MEMBER
 			|| notificationAlert.getSubjectId() == null) {
-			return new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null);
+			return new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, displayName, null);
 		}
 
 		return workspaceMembershipQueryService
@@ -60,16 +62,18 @@ public class NotificationProfileResolver {
 			)
 			.map(profileImageUrl -> new NotificationProfileResponse(
 				NotificationProfileSourceType.SUBJECT,
+				displayName,
 				profileImageUrl
 			))
-			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null));
+			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, displayName, null));
 	}
 
 	private NotificationProfileResponse actorWorkspaceMemberProfile(NotificationAlert notificationAlert) {
+		String displayName = notificationAlert.getActorNameSnapshot();
 		if (notificationAlert.getScopeType() != NotificationScopeType.WORKSPACE
 			|| notificationAlert.getActorType() != NotificationActorType.USER
 			|| notificationAlert.getActorId() == null) {
-			return new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, null);
+			return new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, displayName, null);
 		}
 
 		return workspaceMembershipQueryService
@@ -79,8 +83,9 @@ public class NotificationProfileResolver {
 			)
 			.map(profileImageUrl -> new NotificationProfileResponse(
 				NotificationProfileSourceType.ACTOR,
+				displayName,
 				profileImageUrl
 			))
-			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, null));
+			.orElseGet(() -> new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, displayName, null));
 	}
 }

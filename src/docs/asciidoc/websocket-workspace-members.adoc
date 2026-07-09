@@ -106,7 +106,7 @@ include::_breadcrumb.adoc[]
 
 |``profile``
 |대표 표시 프로필
-|클라이언트가 알림 카드의 프로필 이미지로 사용할 서버 선택 값입니다. ``actor`` 또는 ``subject``에서 이미지를 직접 추론하지 않습니다. 이미지가 ``null``이면 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 기준으로 기본 아바타 문자를 선택합니다.
+|클라이언트가 알림 카드의 프로필 이미지와 대표 이름으로 사용할 서버 선택 값입니다. ``actor`` 또는 ``subject``에서 이미지를 직접 추론하지 않습니다. 이미지가 ``null``이면 ``profile.displayName``의 첫 글자를 기본 아바타 문자로 사용할 수 있습니다.
 
 |``subject.id``
 |``workspaceMemberId``
@@ -135,8 +135,9 @@ include::_breadcrumb.adoc[]
   "type": "WORKSPACE_MEMBER_REMOVED",
   "occurredAt": 1782013200,
   "profile": {
-    "source": "SUBJECT",
-    "profileImageUrl": null
+    "source": "ACTOR",
+    "displayName": "Actor",
+    "profileImageUrl": "/v1/workspaces/12/members/34/profile-image"
   },
   "scope": {
     "type": "WORKSPACE",
@@ -182,6 +183,7 @@ include::_breadcrumb.adoc[]
   "occurredAt": 1782013200,
   "profile": {
     "source": "RECIPIENT",
+    "displayName": "Target",
     "profileImageUrl": "/v1/users/me/profile-image"
   },
   "scope": {
@@ -224,7 +226,7 @@ include::_breadcrumb.adoc[]
 [cols="1,4",role="endpoint-summary"]
 |===
 |문장 조립 |``type``, ``actor``, ``subject``, ``scope``를 기준으로 클라이언트에서 문장을 조립합니다.
-|대표 프로필 |프로필 이미지는 ``profile``을 사용합니다. 가입/역할 변경/강제 퇴장/탈퇴는 ``SUBJECT`` 기준이며, ``WORKSPACE_ACCESS_REVOKED``는 ``RECIPIENT`` 기준입니다. 이미지가 ``null``이면 link:notifications-enum-reference.html#notification-profile-source-type[NotificationProfileSourceType]을 기본 아바타 문자 선택 기준으로 사용합니다.
+|대표 프로필 |프로필 이미지는 ``profile``을 사용합니다. 가입/역할 변경/탈퇴는 ``SUBJECT`` 기준이고, 강제 퇴장은 ``ACTOR`` 기준이며, ``WORKSPACE_ACCESS_REVOKED``는 ``RECIPIENT`` 기준입니다. 이미지가 ``null``이면 ``profile.displayName``의 첫 글자를 기본 아바타 문자로 사용할 수 있습니다.
 |강제 퇴장 분기 |``WORKSPACE_MEMBER_REMOVED``는 남아 있는 구성원에게, ``WORKSPACE_ACCESS_REVOKED``는 강제 퇴장 당사자에게 내려옵니다.
 |링크 처리 |``link.type``이 ``NONE``이면 워크스페이스 내부 화면으로 이동시키지 않습니다.
 |식별자 처리 |``subject.id``는 ``workspaceMemberId``입니다. 사용자 식별자가 필요한 경우 ``actor.id``와 혼동하지 않아야 합니다.

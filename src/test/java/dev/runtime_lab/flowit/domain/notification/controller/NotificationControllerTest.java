@@ -84,6 +84,7 @@ class NotificationControllerTest {
 			.andExpect(jsonPath("$.data.items[0].scope.type").value("WORKSPACE"))
 			.andExpect(jsonPath("$.data.items[0].scope.id").value(12L))
 			.andExpect(jsonPath("$.data.items[0].profile.source").value("SUBJECT"))
+			.andExpect(jsonPath("$.data.items[0].profile.displayName").value("Target"))
 			.andExpect(jsonPath("$.data.items[0].profile.profileImageUrl").value("/v1/workspaces/12/members/55/profile-image"))
 			.andExpect(jsonPath("$.data.items[0].actor.name").value("Actor"))
 			.andExpect(jsonPath("$.data.items[0].subject.name").value("Target"))
@@ -159,6 +160,7 @@ class NotificationControllerTest {
 			1782013200L,
 			new NotificationProfileResponse(
 				NotificationProfileSourceType.SUBJECT,
+				"Target",
 				"/v1/workspaces/12/members/55/profile-image"
 			),
 			new NotificationScopeResponse(NotificationScopeType.WORKSPACE, 12L, "Flowit"),

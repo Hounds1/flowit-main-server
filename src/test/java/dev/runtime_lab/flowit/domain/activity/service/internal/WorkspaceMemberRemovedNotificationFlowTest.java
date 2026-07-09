@@ -142,11 +142,11 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 		when(workspaceMembershipQueryService.findActiveMemberUserIds(12L)).thenReturn(List.of(34L, 35L));
 		when(workspaceMembershipQueryService.findMemberUserId(12L, 55L)).thenReturn(Optional.of(36L));
 		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(34L)))
-			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null));
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, "Actor", null));
 		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(35L)))
-			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.SUBJECT, null));
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.ACTOR, "Actor", null));
 		when(notificationProfileResolver.resolve(any(NotificationAlert.class), eq(36L)))
-			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, null));
+			.thenReturn(new NotificationProfileResponse(NotificationProfileSourceType.RECIPIENT, "Target", null));
 		doAnswer(invocation -> {
 			Object event = invocation.getArgument(0);
 			if (event instanceof NotificationRecipientDeliveryRequestedEvent deliveryEvent) {
@@ -178,14 +178,24 @@ class WorkspaceMemberRemovedNotificationFlowTest {
 		verify(webSocketPublisher, times(3)).publishUserNotification(userIdCaptor.capture(), payloadCaptor.capture());
 
 		Map<Long, NotificationAlertType> sentTypesByUserId = new LinkedHashMap<>();
+		Map<Long, NotificationProfileSourceType> sentProfileSourcesByUserId = new LinkedHashMap<>();
+		Map<Long, String> sentProfileNamesByUserId = new LinkedHashMap<>();
 		for (int index = 0; index < userIdCaptor.getAllValues().size(); index++) {
 			NotificationAlertResponse response = (NotificationAlertResponse) payloadCaptor.getAllValues().get(index);
 			sentTypesByUserId.put(userIdCaptor.getAllValues().get(index), response.type());
+			sentProfileSourcesByUserId.put(userIdCaptor.getAllValues().get(index), response.profile().source());
+			sentProfileNamesByUserId.put(userIdCaptor.getAllValues().get(index), response.profile().displayName());
 		}
 
 		assertEquals(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, sentTypesByUserId.get(34L));
 		assertEquals(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, sentTypesByUserId.get(35L));
 		assertEquals(NotificationAlertType.WORKSPACE_ACCESS_REVOKED, sentTypesByUserId.get(36L));
+		assertEquals(NotificationProfileSourceType.ACTOR, sentProfileSourcesByUserId.get(34L));
+		assertEquals("Actor", sentProfileNamesByUserId.get(34L));
+		assertEquals(NotificationProfileSourceType.ACTOR, sentProfileSourcesByUserId.get(35L));
+		assertEquals("Actor", sentProfileNamesByUserId.get(35L));
+		assertEquals(NotificationProfileSourceType.RECIPIENT, sentProfileSourcesByUserId.get(36L));
+		assertEquals("Target", sentProfileNamesByUserId.get(36L));
 	}
 
 	private Long alertIdOf(Map<Long, NotificationAlert> alerts, NotificationAlertType type) {

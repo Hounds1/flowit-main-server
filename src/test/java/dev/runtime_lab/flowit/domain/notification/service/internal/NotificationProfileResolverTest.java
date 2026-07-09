@@ -8,6 +8,7 @@ import dev.runtime_lab.flowit.domain.notification.dto.NotificationScopeType;
 import dev.runtime_lab.flowit.domain.notification.dto.NotificationSubjectType;
 import dev.runtime_lab.flowit.domain.notification.entity.NotificationAlert;
 import dev.runtime_lab.flowit.domain.user.service.internal.UserProfileQueryService;
+import dev.runtime_lab.flowit.domain.user.service.internal.contract.UserProfileSummary;
 import dev.runtime_lab.flowit.domain.workspace.service.internal.WorkspaceMembershipQueryService;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +28,7 @@ class NotificationProfileResolverTest {
 		new NotificationProfileResolver(userProfileQueryService, workspaceMembershipQueryService);
 
 	@Test
-	void resolvesActorProfileForTaskChangeAlerts() {
+	void resolvesActorProfileForActorFocusedAlerts() {
 		when(workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndUserId(12L, 34L))
 			.thenReturn(Optional.of("/v1/workspaces/12/members/301/profile-image"));
 
@@ -35,21 +36,23 @@ class NotificationProfileResolverTest {
 			NotificationAlertType.TASK_CREATED,
 			NotificationAlertType.TASK_DATE_CHANGED,
 			NotificationAlertType.TASK_STATUS_CHANGED,
-			NotificationAlertType.TASK_PROGRESS_CHANGED
+			NotificationAlertType.TASK_PROGRESS_CHANGED,
+			NotificationAlertType.WORKSPACE_MEMBER_REMOVED
 		);
 
 		for (NotificationAlertType type : actorProfileTypes) {
 			NotificationProfileResponse profile = resolver.resolve(alert(type), 36L);
 
 			assertEquals(NotificationProfileSourceType.ACTOR, profile.source());
+			assertEquals("Actor Snapshot", profile.displayName());
 			assertEquals("/v1/workspaces/12/members/301/profile-image", profile.profileImageUrl());
 		}
 	}
 
 	@Test
 	void resolvesRecipientProfileForDirectRecipientAlerts() {
-		when(userProfileQueryService.findCurrentUserProfileImageUrl(36L))
-			.thenReturn(Optional.of("/v1/users/me/profile-image"));
+		when(userProfileQueryService.findCurrentUserProfile(36L))
+			.thenReturn(Optional.of(new UserProfileSummary("Recipient", "/v1/users/me/profile-image")));
 
 		List<NotificationAlertType> recipientProfileTypes = List.of(
 			NotificationAlertType.TASK_ASSIGNED,
@@ -60,14 +63,15 @@ class NotificationProfileResolverTest {
 			NotificationProfileResponse profile = resolver.resolve(alert(type), 36L);
 
 			assertEquals(NotificationProfileSourceType.RECIPIENT, profile.source());
+			assertEquals("Recipient", profile.displayName());
 			assertEquals("/v1/users/me/profile-image", profile.profileImageUrl());
 		}
 	}
 
 	@Test
 	void resolvesCurrentUserProfileForWorkspaceAccessRevoked() {
-		when(userProfileQueryService.findCurrentUserProfileImageUrl(36L))
-			.thenReturn(Optional.of("/v1/users/me/profile-image"));
+		when(userProfileQueryService.findCurrentUserProfile(36L))
+			.thenReturn(Optional.of(new UserProfileSummary("Recipient", "/v1/users/me/profile-image")));
 
 		NotificationProfileResponse profile = resolver.resolve(
 			alert(NotificationAlertType.WORKSPACE_ACCESS_REVOKED),
@@ -75,6 +79,7 @@ class NotificationProfileResolverTest {
 		);
 
 		assertEquals(NotificationProfileSourceType.RECIPIENT, profile.source());
+		assertEquals("Recipient", profile.displayName());
 		assertEquals("/v1/users/me/profile-image", profile.profileImageUrl());
 	}
 
@@ -92,26 +97,24 @@ class NotificationProfileResolverTest {
 			NotificationProfileResponse profile = resolver.resolve(alert(type), 34L);
 
 			assertEquals(NotificationProfileSourceType.SUBJECT, profile.source());
+			assertEquals("Target Snapshot", profile.displayName());
 			assertEquals("/v1/workspaces/12/members/55/profile-image", profile.profileImageUrl());
 		}
 	}
 
 	@Test
-	void returnsNullImageWhenSubjectMemberIsNotActive() {
+	void returnsNullImageWhenWithdrawnSubjectMemberIsNotActive() {
 		when(workspaceMembershipQueryService.findActiveProfileImageUrlByWorkspaceIdAndMemberId(12L, 55L))
 			.thenReturn(Optional.empty());
 
-		List<NotificationAlertType> inactiveSubjectTypes = List.of(
-			NotificationAlertType.WORKSPACE_MEMBER_REMOVED,
-			NotificationAlertType.WORKSPACE_MEMBER_WITHDRAWN
+		NotificationProfileResponse profile = resolver.resolve(
+			alert(NotificationAlertType.WORKSPACE_MEMBER_WITHDRAWN),
+			34L
 		);
 
-		for (NotificationAlertType type : inactiveSubjectTypes) {
-			NotificationProfileResponse profile = resolver.resolve(alert(type), 34L);
-
-			assertEquals(NotificationProfileSourceType.SUBJECT, profile.source());
-			assertNull(profile.profileImageUrl());
-		}
+		assertEquals(NotificationProfileSourceType.SUBJECT, profile.source());
+		assertEquals("Target Snapshot", profile.displayName());
+		assertNull(profile.profileImageUrl());
 	}
 
 	private NotificationAlert alert(NotificationAlertType type) {

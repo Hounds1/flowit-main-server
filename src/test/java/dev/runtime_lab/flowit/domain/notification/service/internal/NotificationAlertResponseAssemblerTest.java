@@ -51,6 +51,7 @@ class NotificationAlertResponseAssemblerTest {
 		when(notificationProfileResolver.resolve(alert, 7L))
 			.thenReturn(new NotificationProfileResponse(
 				NotificationProfileSourceType.SUBJECT,
+				"Target",
 				"/v1/workspaces/12/members/55/profile-image"
 			));
 
@@ -59,6 +60,7 @@ class NotificationAlertResponseAssemblerTest {
 		assertEquals(1L, response.id());
 		assertEquals(NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED, response.type());
 		assertEquals(NotificationProfileSourceType.SUBJECT, response.profile().source());
+		assertEquals("Target", response.profile().displayName());
 		assertEquals("/v1/workspaces/12/members/55/profile-image", response.profile().profileImageUrl());
 		assertEquals(12L, response.scope().id());
 		assertEquals("Flowit", response.scope().name());
