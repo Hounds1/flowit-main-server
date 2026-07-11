@@ -37,6 +37,7 @@ class NotificationProfileResolverTest {
 			NotificationAlertType.TASK_DATE_CHANGED,
 			NotificationAlertType.TASK_STATUS_CHANGED,
 			NotificationAlertType.TASK_PROGRESS_CHANGED,
+			NotificationAlertType.TASK_COMMENT_CREATED,
 			NotificationAlertType.WORKSPACE_MEMBER_REMOVED
 		);
 

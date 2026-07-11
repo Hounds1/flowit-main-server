@@ -1,21 +1,19 @@
 [.update-note-title]
 Integration Note
 
-Changes:: 알림 목록 조회 API와 알림 WebSocket의 ``NotificationAlertResponse`` 프로필 계약이 변경되었습니다.
+Added:: 작업 댓글 생성 알림이 개인 알림 API와 WebSocket에 추가되었습니다.
 +
-* ``actor.profileImageUrl`` 필드를 제거했습니다.
-* 클라이언트는 알림의 대표 프로필 이미지를 ``actor`` 또는 ``subject``에서 직접 추론하지 않고 서버 지정 ``profile`` 객체를 사용하도록 변경되었습니다.
-* ``profile`` 객체는 ``source``, ``displayName``, ``profileImageUrl`` 을 제공합니다.
-* ``profile.source`` 는 ``NotificationProfileSourceType`` 값이며 ``ACTOR``, ``SUBJECT``, ``RECIPIENT`` 중 하나입니다.
-* ``source`` 값은 알림 ``enum reference`` 문서에서 정확한 값을 참조해주세요.
-* ``WORKSPACE_MEMBER_REMOVED``가 강제 퇴장 행위자인 ``ACTOR``를 대표 프로필로 제공합니다.
-* ``profile.profileImageUrl`` 이 ``null`` 이면 클라이언트는 ``profile.displayName`` 의 첫 글자를 기본 아바타로 사용할 수 있습니다.
-* 대표 프로필 이미지는 응답 조립 시점의 현재 프로필 이미지 조회 URL이며, 알림 발생 시점의 이미지 경로 스냅샷이 아닙니다.
-* 따라서 현재 프로필 이미지가 변경되는 경우 지난 알림의 이미지 경로도 함께 변경됩니다.
-* 파일 관리 정책에 따라 더 이상 워크스페이스 멤버가 아니게 된 경우 이미지 경로가 ``null``로 반환될 수 있습니다.
-* 확장으로 인한 원본 참조에 대비하기 위해 ``source`` 필드는 삭제하지 않고 유지합니다.
+* ``POST /v1/workspaces/{workspaceId}/tasks/{taskId}/comments``로 댓글이 생성되면 수신자에게 ``TASK_COMMENT_CREATED`` 알림이 생성됩니다.
+* 수신자 후보는 작업 생성자와 현재 담당자이며 댓글 작성자는 제외합니다. 작업 생성자와 담당자가 같은 사용자이면 한 번만 전달합니다.
+* 과거 댓글 작성자는 별도 구독자 또는 참여자로 취급하지 않으므로 수신자 후보에 포함하지 않습니다.
+* 댓글 작성자만 수신자 후보로 남는 경우에는 알림을 생성하지 않습니다.
 
-Changes:: 대시보드 인디케이터의 필드가 변경되었습니다.
+Client:: 기존 개인 알림 구독과 응답 조립 방식을 그대로 사용합니다.
 +
-* `pendingReview` 필드를 제거했습니다.
-* `expired` 필드를 생성했습니다.
+* WebSocket 구독 destination은 기존과 동일한 ``/user/queue/notifications``입니다.
+* WebSocket payload와 ``GET /v1/notifications``의 ``data.items[]``는 동일한 ``NotificationAlertResponse`` 구조를 사용합니다.
+* ``type``은 ``TASK_COMMENT_CREATED``이고 ``profile.source``는 ``ACTOR``입니다. 댓글 작성자의 표시 정보는 ``actor``와 ``profile``을 사용합니다.
+* ``subject.type``은 ``TASK``, ``subject.id``는 ``taskId``, ``subject.name``은 댓글 생성 시점의 작업 제목 스냅샷입니다.
+* 댓글 본문은 알림 payload에 포함하지 않으며 ``changes``는 빈 배열입니다. 클라이언트는 상세 diff 없이 댓글 생성 문구를 조립합니다.
+* ``link.type``은 ``TASK_DETAIL``입니다. ``link.workspaceId``와 ``subject.id``로 작업 상세 화면에 이동할 수 있습니다.
+* 현재 알림 계약에는 ``commentId``나 댓글 anchor가 없으므로 특정 댓글로 직접 이동하거나 자동 스크롤할 수 없습니다.

@@ -9,6 +9,7 @@ import dev.runtime_lab.flowit.domain.task.entity.TaskComment;
 import dev.runtime_lab.flowit.domain.task.exception.TaskCommentAccessDeniedException;
 import dev.runtime_lab.flowit.domain.task.exception.TaskCommentNotFoundException;
 import dev.runtime_lab.flowit.domain.task.exception.TaskNotFoundException;
+import dev.runtime_lab.flowit.domain.task.event.TaskCommentCreatedEvent;
 import dev.runtime_lab.flowit.domain.task.repository.TaskCommentRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskRepository;
 import dev.runtime_lab.flowit.domain.user.entity.User;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class TaskCommentService {
 	private final WorkspaceAccessService workspaceAccessService;
 	private final TaskRepository taskRepository;
 	private final TaskCommentRepository taskCommentRepository;
+	private final ApplicationEventPublisher eventPublisher;
 	private final Clock clock;
 
 	@Transactional
@@ -60,6 +63,7 @@ public class TaskCommentService {
 			.createdAt(now)
 			.updatedAt(now)
 			.build());
+		eventPublisher.publishEvent(TaskCommentCreatedEvent.from(comment));
 
 		return TaskCommentCreateResponse.from(comment);
 	}

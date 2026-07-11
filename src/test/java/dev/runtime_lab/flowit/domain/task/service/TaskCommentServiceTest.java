@@ -6,6 +6,7 @@ import dev.runtime_lab.flowit.domain.task.entity.Task;
 import dev.runtime_lab.flowit.domain.task.entity.TaskComment;
 import dev.runtime_lab.flowit.domain.task.entity.TaskPriority;
 import dev.runtime_lab.flowit.domain.task.entity.TaskStatus;
+import dev.runtime_lab.flowit.domain.task.event.TaskCommentCreatedEvent;
 import dev.runtime_lab.flowit.domain.task.exception.TaskCommentAccessDeniedException;
 import dev.runtime_lab.flowit.domain.task.repository.TaskCommentRepository;
 import dev.runtime_lab.flowit.domain.task.repository.TaskRepository;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,11 +40,13 @@ class TaskCommentServiceTest {
 	private final WorkspaceAccessService workspaceAccessService = mock(WorkspaceAccessService.class);
 	private final TaskRepository taskRepository = mock(TaskRepository.class);
 	private final TaskCommentRepository taskCommentRepository = mock(TaskCommentRepository.class);
+	private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
 	private final Clock clock = Clock.fixed(Instant.ofEpochSecond(1780916400L), ZoneOffset.UTC);
 	private final TaskCommentService taskCommentService = new TaskCommentService(
 		workspaceAccessService,
 		taskRepository,
 		taskCommentRepository,
+		eventPublisher,
 		clock
 	);
 
@@ -50,9 +54,12 @@ class TaskCommentServiceTest {
 	void createTrimsContentAndCreatesComment() {
 		CurrentUser currentUser = new CurrentUser(1L, "actor@example.com", "Actor");
 		User actor = user(1L, "actor@example.com", "Actor");
+		User creator = user(2L, "creator@example.com", "Creator");
+		User assignee = user(3L, "assignee@example.com", "Assignee");
 		Workspace workspace = workspace(actor);
 		WorkspaceMember actorMember = workspaceMember(10L, workspace, actor);
-		Task task = task(100L, workspace, actor);
+		WorkspaceMember assigneeMember = workspaceMember(11L, workspace, assignee);
+		Task task = task(100L, workspace, creator, assigneeMember);
 		ArgumentCaptor<TaskComment> commentCaptor = ArgumentCaptor.forClass(TaskComment.class);
 
 		when(workspaceAccessService.resolveMemberAccess(currentUser, 1L))
@@ -77,6 +84,20 @@ class TaskCommentServiceTest {
 		assertEquals("Actor", savedComment.getAuthorDisplayNameSnapshot());
 		assertFalse(savedComment.isEdited());
 		assertEquals(1780916400L, savedComment.getCreatedAt());
+
+		ArgumentCaptor<TaskCommentCreatedEvent> eventCaptor = ArgumentCaptor.forClass(TaskCommentCreatedEvent.class);
+		verify(eventPublisher).publishEvent(eventCaptor.capture());
+		TaskCommentCreatedEvent event = eventCaptor.getValue();
+		assertEquals(500L, event.commentId());
+		assertEquals(1L, event.workspaceId());
+		assertEquals("Flowit", event.workspaceName());
+		assertEquals(100L, event.taskId());
+		assertEquals("Login UI", event.taskTitle());
+		assertEquals(1L, event.actorUserId());
+		assertEquals("Actor", event.actorName());
+		assertEquals(2L, event.taskCreatorUserId());
+		assertEquals(3L, event.taskAssigneeUserId());
+		assertEquals(1L, event.occurredAt());
 	}
 
 	@Test
@@ -294,6 +315,10 @@ class TaskCommentServiceTest {
 	}
 
 	private Task task(Long id, Workspace workspace, User creator) {
+		return task(id, workspace, creator, null);
+	}
+
+	private Task task(Long id, Workspace workspace, User creator, WorkspaceMember assignee) {
 		return Task.builder()
 			.id(id)
 			.workspace(workspace)
@@ -301,6 +326,7 @@ class TaskCommentServiceTest {
 			.descriptionMarkdown("### Login screen")
 			.status(TaskStatus.TODO)
 			.priority(TaskPriority.HIGH)
+			.assignee(assignee)
 			.progress(0)
 			.createdBy(creator)
 			.createdAt(1L)

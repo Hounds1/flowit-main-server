@@ -261,7 +261,7 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |``profile.source`` |알림 유형
 
 |``ACTOR``
-|``TASK_CREATED``, ``TASK_DATE_CHANGED``, ``TASK_STATUS_CHANGED``, ``TASK_PROGRESS_CHANGED``, ``WORKSPACE_MEMBER_REMOVED``
+|``TASK_CREATED``, ``TASK_DATE_CHANGED``, ``TASK_STATUS_CHANGED``, ``TASK_PROGRESS_CHANGED``, ``TASK_COMMENT_CREATED``, ``WORKSPACE_MEMBER_REMOVED``
 
 |``RECIPIENT``
 |``TASK_ASSIGNED``, ``TASK_UNASSIGNED``, ``WORKSPACE_ACCESS_REVOKED``
@@ -317,6 +317,10 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 |현재 미발행
 |진행도 변경 알림을 위한 예약 타입입니다. 현재는 알림 기록과 WebSocket payload를 생성하지 않습니다.
 
+|``TASK_COMMENT_CREATED``
+|작업 생성자 또는 현재 담당자
+|Actor님이 Login UI 작업에 댓글을 작성했습니다.
+
 |``TASK_ASSIGNED``
 |새 담당자
 |Login UI 작업의 담당자로 할당되었습니다.
@@ -331,6 +335,8 @@ Notification의 ``read``와 ``seen``은 활동 원장의 상태가 아니라 수
 서버는 같은 수신자에게 전달되는 알림을 수신자별 스트림으로 다루고, 같은 활동에서 파생된 알림 그룹은 내부 순서대로 발송합니다. 그룹 식별 값과 순서 값은 클라이언트 payload에 노출되지 않으므로, 클라이언트는 별도 정렬 키를 추론하지 말고 WebSocket 수신 순서와 목록 API 순서를 기준으로 병합합니다.
 
 작업에서 여러 요소가 동시에 변경되면 서버는 알림 유형별로 ``changes``를 분리합니다. 예를 들어 담당자와 마감일이 함께 바뀐 경우 현재 발행되는 ``TASK_ASSIGNED``는 ``ASSIGNEE``만 포함하고, 마감일 변경 알림은 생성하지 않습니다. 상세 규칙은 link:websocket-task-notifications.html[작업 알림 WebSocket]을 기준으로 확인합니다.
+
+``TASK_COMMENT_CREATED``는 작업 생성자와 현재 담당자 중 댓글 작성자를 제외한 사용자에게 전달합니다. ``subject``는 댓글이 작성된 ``TASK``를 나타내고 ``changes``는 빈 배열이므로 댓글 본문이나 상세 diff를 조립하지 않습니다. ``TASK_DETAIL`` 링크는 작업 상세 화면까지만 가리키며 특정 댓글 anchor 이동은 지원하지 않습니다.
 
 == null 및 값 타입 처리
 
