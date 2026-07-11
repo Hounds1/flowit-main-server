@@ -29,7 +29,8 @@ public class NotificationProfileResolver {
 			case TASK_CREATED,
 				TASK_DATE_CHANGED,
 				TASK_STATUS_CHANGED,
-				TASK_PROGRESS_CHANGED -> actorWorkspaceMemberProfile(notificationAlert);
+				TASK_PROGRESS_CHANGED,
+				TASK_COMMENT_CREATED -> actorWorkspaceMemberProfile(notificationAlert);
 		};
 	}
 

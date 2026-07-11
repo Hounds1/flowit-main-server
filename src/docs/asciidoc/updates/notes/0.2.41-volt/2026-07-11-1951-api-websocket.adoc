@@ -1,3 +1,27 @@
+// integration-note-source-sha256: 381fe433ce643dcfed2dc87809230d8decea221c75bc20287c57a77a2c6534ec
+// integration-note-version: 0.2.41-volt
+// integration-note-time: 2026-07-11-1951
+// integration-note-time-human: 2026-07-11 19:51 KST
+// integration-note-impact: Added
+// integration-note-target: `POST /v1/workspaces/{workspaceId}/tasks/{taskId}/comments`
+// integration-note-summary: 작업 댓글 생성 알림이 개인 알림 API와 WebSocket에 추가되었습니다.
+// integration-note-anchor: integration-note-0-2-41-volt-2026-07-11-1951-api-websocket
+
+[#integration-note-0-2-41-volt-2026-07-11-1951-api-websocket]
+=== 작업 댓글 생성 알림이 개인 알림 API와 WebSocket에 추가되었습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.2.41-volt`
+|Archived At |2026-07-11 19:51 KST
+|Impact |Added
+|Target |`POST /v1/workspaces/{workspaceId}/tasks/{taskId}/comments`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
 [.update-note-title]
 Integration Note
 
@@ -17,3 +41,4 @@ Client:: 기존 개인 알림 구독과 응답 조립 방식을 그대로 사용
 * 댓글 본문은 알림 payload에 포함하지 않으며 ``changes``는 빈 배열입니다. 클라이언트는 상세 diff 없이 댓글 생성 문구를 조립합니다.
 * ``link.type``은 ``TASK_DETAIL``입니다. ``link.workspaceId``와 ``subject.id``로 작업 상세 화면에 이동할 수 있습니다.
 * 현재 알림 계약에는 ``commentId``나 댓글 anchor가 없으므로 특정 댓글로 직접 이동하거나 자동 스크롤할 수 없습니다.
+--

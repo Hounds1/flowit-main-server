@@ -209,6 +209,7 @@ class EnumReferenceDocsTest {
 				entry(NotificationAlertType.TASK_PROGRESS_CHANGED, "작업 진행률이 변경된 알림입니다."),
 				entry(NotificationAlertType.TASK_ASSIGNED, "작업 담당자로 할당된 알림입니다."),
 				entry(NotificationAlertType.TASK_UNASSIGNED, "작업 담당자에서 해제된 알림입니다."),
+				entry(NotificationAlertType.TASK_COMMENT_CREATED, "작업에 댓글이 생성된 알림입니다."),
 				entry(NotificationAlertType.WORKSPACE_MEMBER_JOINED, "워크스페이스 멤버가 가입한 알림입니다."),
 				entry(NotificationAlertType.WORKSPACE_MEMBER_ROLE_CHANGED, "워크스페이스 멤버 역할이 변경된 알림입니다."),
 				entry(NotificationAlertType.WORKSPACE_MEMBER_REMOVED, "워크스페이스 구성원 관점의 멤버 강제 퇴장 알림입니다."),
