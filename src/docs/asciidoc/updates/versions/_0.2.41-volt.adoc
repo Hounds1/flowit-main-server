@@ -1,0 +1,24 @@
+[[integration-notes-0-2-41-volt]]
+++++
+<details class="integration-note-version">
+<summary><span class="integration-note-version-summary"><span class="integration-note-version-title">0.2.41 volt</span><span class="integration-note-version-meta">Volt / 1 note</span></span></summary>
+<div class="content">
+++++
+
+[cols="18,16,24,42",options="header",role="api-index"]
+|===
+|Time |Impact |Target |Summary
+
+|2026-07-11 19:51 KST
+|Added
+|`POST /v1/workspaces/{workspaceId}/tasks/{taskId}/comments`
+|<<integration-note-0-2-41-volt-2026-07-11-1951-api-websocket,작업 댓글 생성 알림이 개인 알림 API와 WebSocket에 추가되었습니다.>>
+
+|===
+
+include::../notes/0.2.41-volt/2026-07-11-1951-api-websocket.adoc[]
+
+++++
+</div>
+</details>
+++++
