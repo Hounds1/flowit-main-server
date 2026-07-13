@@ -14,7 +14,7 @@ plugins {
 }
 
 group = 'dev.runtime-lab'
-version = '0.2.41-volt'
+version = '0.3.0-titan'
 
 java {
 	toolchain {
@@ -1313,6 +1313,7 @@ tasks.named('asciidoctor', AsciidoctorTask) {
 			include 'day.png'
 			include 'for-yours.png'
 			include 'night.png'
+			include 'the heart of the gas_3717290.png'
 		}
 	}
 }
