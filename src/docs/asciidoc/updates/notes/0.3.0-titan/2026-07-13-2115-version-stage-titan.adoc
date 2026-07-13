@@ -1,0 +1,31 @@
+// integration-note-source-sha256: 87a2741e883b58b206cca1d28d75bec3906fcf9341399bb2ebd1e9adcef3025d
+// integration-note-version: 0.3.0-titan
+// integration-note-time: 2026-07-13-2115
+// integration-note-time-human: 2026-07-13 21:15 KST
+// integration-note-impact: Transition
+// integration-note-target: `updates/latest.adoc`
+// integration-note-summary: Version Stage를 `titan`으로 변경했습니다.
+// integration-note-anchor: integration-note-0-3-0-titan-2026-07-13-2115-version-stage-titan
+
+[#integration-note-0-3-0-titan-2026-07-13-2115-version-stage-titan]
+=== Version Stage를 `titan`으로 변경했습니다.
+
+[cols="1,4",role="endpoint-summary"]
+|===
+|Version |`0.3.0-titan`
+|Archived At |2026-07-13 21:15 KST
+|Impact |Transition
+|Target |`updates/latest.adoc`
+|Source |`updates/latest.adoc`
+|===
+
+.Archived integration note
+[.archived-note-snapshot]
+--
+[.update-note-title]
+Integration Note
+
+Transition:: Version Stage를 ``titan``으로 변경했습니다.
++
+* 전체 API 계약이 현재 상태로 고정됩니다.
+--
